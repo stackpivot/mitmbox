@@ -1,0 +1,74 @@
+#!/usr/bin/python2
+
+import sys, signal, os 
+from threading import *
+from socket import *
+import struct
+import pdb
+
+MTU = 32676
+ETH_P_ALL = 0x03
+
+class sniffer():
+
+    def __init__(self, input_interface, output_interface):
+
+        self.input_interface = input_interface
+        self.output_interface = output_interface
+
+        self.s_recv = socket(AF_PACKET, SOCK_RAW, htons(ETH_P_ALL))
+        self.s_recv.setblocking(0)
+        self.s_recv.bind((self.input_interface, ETH_P_ALL))
+
+        self.s_send = socket(AF_PACKET, SOCK_RAW)
+        self.s_send.bind((self.output_interface, 0))
+
+    def lock_check(self):
+        return not still_running_lock.locked()
+
+    def recv_send_loop(self):
+        while True:
+           try:
+              pkt, sa = self.s_recv.recvfrom(MTU)
+              if sa[2] != PACKET_OUTGOING:
+                 # if (pkt[0x1e:][:4] != inet_aton("192.168.0.1")) or (pkt[0x24:][:2] != struct.pack(">H", 80)):
+                 # if (pkt[0x1e:][:4] != inet_aton("192.168.1.1")):
+                    # pdb.set_trace()
+                 self.s_send.send(pkt)
+           except error:
+              pass
+           if self.lock_check() == True:
+              break
+         
+thread1 = None
+thread2 = None 
+still_running_lock = Lock()
+
+def signal_handler(signal, frame):
+
+    still_running_lock.release()
+    thread1.join()
+    thread2.join()
+    sys.exit(0)
+
+if __name__ == '__main__':
+
+    (host1_interface, host2_interface) = sys.argv[1:]
+
+    os.system("ifconfig " + host1_interface + " promisc")
+    os.system("ifconfig " + host2_interface + " promisc")
+
+    sniffer1 = sniffer(host1_interface, host2_interface)
+    sniffer2 = sniffer(host2_interface, host1_interface)
+
+    thread1 = Thread(target=sniffer1.recv_send_loop) 
+    thread2 = Thread(target=sniffer2.recv_send_loop)
+
+    still_running_lock.acquire()
+
+    thread1.start()
+    thread2.start()
+
+    signal.signal(signal.SIGINT, signal_handler)
+    signal.pause()
+
