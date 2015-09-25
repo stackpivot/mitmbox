@@ -6,7 +6,7 @@ ifconfig mon0 hw ether 02:59:05:c1:67:15
 ifconfig mon0 up
 
 ifconfig eth0.102 down
-ip link set eth0.102 name mon1
+ip link set eth0.102 name lan0
 ifconfig mon1 hw ether 02:59:05:c1:67:16
 ifconfig mon1 up
 
@@ -25,4 +25,5 @@ ip link set eth0.201 name conf0
 ifconfig conf0 hw ether 02:59:05:c1:67:19
 ifconfig conf0 up
 
-
+modprobe dummy
+ip link set name mitm0 dev dummy0
