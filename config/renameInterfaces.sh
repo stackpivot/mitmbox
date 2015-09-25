@@ -1,0 +1,28 @@
+#!/bin/sh
+
+ifconfig eth0.101 down
+ip link set eth0.101 name mon0
+ifconfig mon0 hw ether 02:59:05:c1:67:15
+ifconfig mon0 up
+
+ifconfig eth0.102 down
+ip link set eth0.102 name mon1
+ifconfig mon1 hw ether 02:59:05:c1:67:16
+ifconfig mon1 up
+
+ifconfig eth0.103 down
+ip link set eth0.103 name br0
+ifconfig br0 hw ether 02:59:05:c1:67:17
+ifconfig br0 up
+
+ifconfig eth0.104 down
+ip link set eth0.104 name br1
+ifconfig br1 hw ether 02:59:05:c1:67:18
+ifconfig br1 up
+
+ifconfig eth0.201 down
+ip link set eth0.201 name conf0
+ifconfig conf0 hw ether 02:59:05:c1:67:19
+ifconfig conf0 up
+
+
