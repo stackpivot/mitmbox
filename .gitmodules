@@ -1,0 +1,3 @@
+[submodule "bin/tcpproxy"]
+	path = bin/tcpproxy
+	url = https://github.com/ickerwx/tcpproxy
