@@ -4,17 +4,19 @@ iface lo inet loopback
 
 # WAN - external
 auto eth0.201
-iface eth0.201 inet dhcp
+iface eth0.201 inet static
+    address 10.0.0.1 
+    netmask 255.255.255.0
 
 # VLAN 101 - internal
 auto eth0.101
 iface eth0.101 inet static 
-    address 192.168.13.5 
+    address 10.1.1.1 
     netmask 255.255.255.0
 
 # VLAN 102 - unused
 auto eth0.102
-iface eth0.102 inet manual
+iface eth0.102 inet dhcp
 
 # VLAN 103 - unused
 auto eth0.103
@@ -22,13 +24,5 @@ iface eth0.103 inet manual
 
 # VLAN 104 - DMZ
 auto eth0.104
-iface eth0.104 inet static
-    address 192.168.14.1
-    netmask 255.255.255.0
-
-auto eth1
-iface eth1 inet static
-        address 192.168.30.201
-        netmask 255.255.255.0
-
+iface eth0.104 inet manual
 
