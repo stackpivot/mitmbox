@@ -25,5 +25,4 @@ ip link set eth0.201 name conf0
 ifconfig conf0 hw ether 02:59:05:c1:67:19
 ifconfig conf0 up
 
-modprobe dummy
-ip link set name mitm0 dev dummy0
+ip tuntap add dev tap0 mode tap
