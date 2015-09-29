@@ -20,7 +20,6 @@ IFF_NO_IP = 0x1000
 BUFFERSIZE_DEV = 65000
 
 
-
 #Global variables
 dst_ip   = ''
 dst_mac  = ''
