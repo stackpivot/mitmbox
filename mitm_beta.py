@@ -26,6 +26,7 @@ ETH_P_ALL = 0x03
 
 TUNSETIFF = 0x400454ca
 IFF_TAP   = 0x0002
+IFF_NO_IP = 0x1000
 
 BUFFERSIZE_DEV = 65000
 
@@ -134,6 +135,7 @@ def parse_config():
         print config.get('Server','ip')
 
 if __name__ == '__main__':
+
     parser = argparse.ArgumentParser(description='Ethernet Bridge')
     parser.add_argument("-f", nargs=1, dest="file_name", type=str, action='store',
        help='config file to block ip address and/or tcp port (file syntax per line: <ip>:<port> (e.g. "192.168.0.1:443", "0.0.0.0:80", "192.168.1.1")')
@@ -165,7 +167,7 @@ if __name__ == '__main__':
     os.system("ifconfig " + host2_interface + " promisc")
 
     tap_device = os.open('/dev/net/tun', os.O_RDWR | os.O_NONBLOCK)
-    flags = struct.pack('16sH', "tap0", IFF_TAP)
+    flags = struct.pack('16sH', "tap0", IFF_TAP | IFF_NO_PI)
     fcntl.ioctl(tap_device, TUNSETIFF, flags)
 
     sniffer1 = sniffer(host1_interface, host2_interface, mitm_interface, 0, filter)
