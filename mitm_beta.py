@@ -110,7 +110,6 @@ class sniffer():
            if pkt:
               if self.apply_filter(pkt[0x1e:][:4], pkt[0x24:][:2]):
                  pkt_new = pkt[0:6] + "128926521146".decode("hex") + pkt[0xc:0x1e] + filter[0][0] + pkt[0x20:] 
-                 pdb.set_trace()
                  self.redirect(pkt_new)
               else:
                  self.send(pkt)
