@@ -19,7 +19,7 @@ from fcntl import ioctl
 from threading import *
 from socket import *
 from ConfigParser import *
-import pdb
+import pdb8
 
 MTU = 32676
 ETH_P_ALL = 0x03
@@ -176,7 +176,7 @@ if __name__ == '__main__':
 
     thread1 = Thread(target=sniffer1.recv_send_loop) 
     thread2 = Thread(target=sniffer2.recv_send_loop)
-    thread3 = Thread(target=sniffer1.recv_send_loop) 
+    thread3 = Thread(target=sniffer1.recv_send_loop) #potential bug. set sniffer3?
 
     still_running_lock.acquire()
 
