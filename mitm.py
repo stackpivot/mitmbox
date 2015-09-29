@@ -9,7 +9,7 @@ import pdb8
 #TODO: set environment variable
 
 
-
+#TODO: whats that shit
 #GLOBAL DEFINES
 MTU = 32676
 ETH_P_ALL = 0x03
