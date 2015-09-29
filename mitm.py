@@ -1,4 +1,4 @@
-import sys, signal, os, argparse, struct, fcntl 
+import sys, signal, os, argparse, struct, fcntl
 from fcntl import ioctl
 from threading import *
 from socket import *
@@ -7,7 +7,6 @@ import pdb8
 
 
 #TODO: set environment variable
-
 
 #TODO: whats that shit
 #GLOBAL DEFINES
@@ -34,8 +33,8 @@ src_port = 0
 
 
 def main():
-	
-	config = ConfigParser()
+
+    config = ConfigParser()
 	config.readfp(open('mitm.conf'))
 
 	dst_ip   = config.get('Destination','ip')
