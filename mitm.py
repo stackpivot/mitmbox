@@ -60,9 +60,10 @@ def main():
 	flags = struct.pack('16sH', "tap0", IFF_TAP | IFF_NO_PI)
 	fcntl.ioctl(tap_device, TUNSETIFF, flags)
 
-	host1_interface = args.interface1[0]
-    mitm_interface = args.interface2[0]
-    host2_interface = args.interface3[0]
+	#initialise sniffer threads
+	sniffer1 = sniffer(host1_interface, host2_interface, mitm_interface, 0, filter)
+	sniffer2 = sniffer(host2_interface, host1_interface, mitm_interface, 0, filter)
+	sniffer3 = sniffer(host1_in8erface, host2_interface, 0, mitm_interface, filter)
 
 
 
