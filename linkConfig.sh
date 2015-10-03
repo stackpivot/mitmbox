@@ -5,3 +5,4 @@
 /bin/ln -f -s /root/mitmbox/config/wifiAP/hostapd /usr/sbin/hostapd
 /bin/ln -f -s /root/mitmbox/config/wifiAP/hostapd_cli /usr/sbin/hostapd_cli
 /bin/ln -s /root/mitmbox/config/wifiAP/hostapd.conf /etc/hostapd.conf
+/bin/ln -f -s /root/mitmbox/config/wifiAP/default/hostapd /etc/default/hostapd
