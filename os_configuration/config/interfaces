@@ -26,3 +26,12 @@ iface eth0.103 inet manual
 auto eth0.104
 iface eth0.104 inet manual
 
+auto wlan1
+iface wlan1 inet static
+    address 10.9.9.1 
+    netmask 255.255.255.0
+
+auto wlan1
+iface wlan1 inet static
+    address 10.9.9.1
+    netmask 255.255.255.0
