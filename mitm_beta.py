@@ -124,7 +124,6 @@ class sniffer():
               if self.apply_filter(pkt[0x1e:][:4], pkt[0x24:][:2]):
                  ip_checksum = self.checksum(pkt[0xe:0x18] + "\x00\x00" + pkt[0x1a:0x1e] + "03010103".decode("hex"))
                  pkt_new = "0e337e2f1961".decode("hex") + pkt[0x6:0x18] + struct.pack(">H", ip_checksum) + pkt[0x1a:0x1e] + "03010103".decode("hex") + pkt[0x22:] 
-                 # pkt_new = "0e337e2f1961".decode("hex") + pkt[0x6:] 
                  self.redirect(pkt_new)
               else:
                  self.send(pkt)
