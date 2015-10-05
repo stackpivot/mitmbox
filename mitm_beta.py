@@ -67,24 +67,6 @@ class sniffer():
         else:
             self.filter = ""
 
-    def ip_checksum(ip_header, size):
-
-        cksum = 0
-        pointer = 0
-
-        while size > 1:
-            cksum += int((str("%02x" % (ip_header[pointer],)) +
-                          str("%02x" % (ip_header[pointer + 1],))), 16)
-            size -= 2
-            pointer += 2
-        if size:  # This accounts for a situation where the header is odd
-            cksum += ip_header[pointer]
-
-        cksum = (cksum >> 16) + (cksum & 0xffff)
-        cksum += (cksum >> 16)
-
-        return (~cksum) & 0xFFFF
-
     def lock_check(self):
         return not still_running_lock.locked()
 
@@ -133,17 +115,17 @@ class sniffer():
                 if self.apply_filter(pkt[0x1e:][:4], pkt[0x24:][:2]):
 
                     ip_checksum = self.checksum(
-                                                pkt[0xe:0x18]
-                                                + "\x00\x00"
-                                                + pkt[0x1a:0x1e]
-                                                + "03010103".decode("hex"))
+                        pkt[0xe:0x18]
+                        + "\x00\x00"
+                        + pkt[0x1a:0x1e]
+                        + "03010103".decode("hex"))
 
                     pkt_new = "0e337e2f1961".decode("hex")
-                                                + pkt[0x6:0x18]
-                                                + struct.pack(">H", ip_checksum)
-                                                + pkt[0x1a:0x1e]
-                                                + "03010103".decode("hex")
-                                                + pkt[0x22:]
+                        + pkt[0x6:0x18]
+                        + struct.pack(">H", ip_checksum)
+                        + pkt[0x1a:0x1e]
+                        + "03010103".decode("hex")
+                        + pkt[0x22:]
 
                     self.redirect(pkt_new)
 
