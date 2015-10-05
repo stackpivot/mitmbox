@@ -7,10 +7,9 @@ Ethernet Bridge
 
 Description: Ethernet bridge for man-in-the-middle attacks.
 
-Markus Mahrla
+Markus Mahrla, Jon Barg
 GAI NetConsult GmbH
 
-Last change: 28-09-2015
 
 """
 
