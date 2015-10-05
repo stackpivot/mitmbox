@@ -13,11 +13,11 @@ GAI NetConsult GmbH
 
 """
 
-import sys, signal, os, argparse, struct, fcntl 
+import sys, signal, os, argparse, struct, fcntl
 from fcntl import ioctl
 from threading import *
 from ConfigParser import *
-from pdb import * 
+from pdb import *
 from scapy.all import *
 from socket import *
 
@@ -39,7 +39,7 @@ class sniffer():
           self.s_iface0.bind((iface0, ETH_P_ALL))
 
           self.s_iface1 = socket(AF_PACKET, SOCK_RAW)
-          self.s_iface1.bind((iface1, ETH_P_ALL)) 
+          self.s_iface1.bind((iface1, ETH_P_ALL))
 
           self.receive = self.socket_receive
           self.send = lambda pkt: self.s_iface1.send(pkt)
@@ -47,10 +47,10 @@ class sniffer():
 
        if mitm_out:
           self.s_iface0 = socket(AF_PACKET, SOCK_RAW)
-          self.s_iface0.bind((iface0, ETH_P_ALL)) 
+          self.s_iface0.bind((iface0, ETH_P_ALL))
 
           self.s_iface1 = socket(AF_PACKET, SOCK_RAW)
-          self.s_iface1.bind((iface1, ETH_P_ALL)) 
+          self.s_iface1.bind((iface1, ETH_P_ALL))
 
           self.receive = self.device_receive
           self.send = lambda pkt: self.s_iface0.send(pkt)
@@ -62,21 +62,21 @@ class sniffer():
           self.filter = ""
 
     def ip_checksum(ip_header, size):
-    
+
        cksum = 0
        pointer = 0
-    
+
        while size > 1:
-           cksum += int((str("%02x" % (ip_header[pointer],)) + 
+           cksum += int((str("%02x" % (ip_header[pointer],)) +
                       str("%02x" % (ip_header[pointer+1],))), 16)
            size -= 2
            pointer += 2
        if size: #This accounts for a situation where the header is odd
            cksum += ip_header[pointer]
-        
+
        cksum = (cksum >> 16) + (cksum & 0xffff)
        cksum += (cksum >>16)
-    
+
        return (~cksum) & 0xFFFF
 
     def lock_check(self):
@@ -86,11 +86,11 @@ class sniffer():
        if self.filter:
           for filter in self.filter:
              if filter[0] == pkt_ip or filter[0] == "0.0.0.0":
-                if filter[1] == pkt_port or filter[1] == "": 
-                   return True 
+                if filter[1] == pkt_port or filter[1] == "":
+                   return True
        return False
 
-    # IPv4 checksum calculation (taken from Scapy utils)  
+    # IPv4 checksum calculation (taken from Scapy utils)
     def checksum(self, pkt):
        if len(pkt) % 2 == 1:
           pkt += "\0"
@@ -106,12 +106,12 @@ class sniffer():
           return p
        except error:
           pass
-    
+
     def socket_receive(self):
        pkt, sa = self.s_iface0.recvfrom(MTU)
        if sa[2] != PACKET_OUTGOING:
           return pkt
- 
+
     def recv_send_loop(self):
         pkt = ""
         while True:
@@ -122,7 +122,7 @@ class sniffer():
            if pkt:
               if self.apply_filter(pkt[0x1e:][:4], pkt[0x24:][:2]):
                  ip_checksum = self.checksum(pkt[0xe:0x18] + "\x00\x00" + pkt[0x1a:0x1e] + "03010103".decode("hex"))
-                 pkt_new = "0e337e2f1961".decode("hex") + pkt[0x6:0x18] + struct.pack(">H", ip_checksum) + pkt[0x1a:0x1e] + "03010103".decode("hex") + pkt[0x22:] 
+                 pkt_new = "0e337e2f1961".decode("hex") + pkt[0x6:0x18] + struct.pack(">H", ip_checksum) + pkt[0x1a:0x1e] + "03010103".decode("hex") + pkt[0x22:]
                  self.redirect(pkt_new)
               else:
                  self.send(pkt)
@@ -130,8 +130,8 @@ class sniffer():
               break
 
 thread1 = None
-thread2 = None 
-thread3 = None 
+thread2 = None
+thread3 = None
 
 still_running_lock = Lock()
 
@@ -175,7 +175,7 @@ if __name__ == '__main__':
 
     if args.rewrite:
        rewrite = args.rewrite[0]
-       
+
     os.system("ifconfig " + host1_interface + " promisc")
     os.system("ifconfig " + host2_interface + " promisc")
 
@@ -188,7 +188,7 @@ if __name__ == '__main__':
     sniffer2 = sniffer(host2_interface, host1_interface, mitm_interface, 0, filter)
     sniffer3 = sniffer(host1_interface, host2_interface, 0, mitm_interface, filter)
 
-    thread1 = Thread(target=sniffer1.recv_send_loop) 
+    thread1 = Thread(target=sniffer1.recv_send_loop)
     thread2 = Thread(target=sniffer2.recv_send_loop)
     thread3 = Thread(target=sniffer3.recv_send_loop)
 
