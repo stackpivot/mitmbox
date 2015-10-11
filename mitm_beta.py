@@ -49,7 +49,7 @@ class sniffer():
           self.send = lambda pkt: self.s_iface1.send(pkt)
           self.redirect = self.device_send
 
-       # traffic going from from man-in-the-middle interface to bridged interfaces
+       # traffic going from man-in-the-middle interface to bridged interfaces
        if mitm_out:
           self.s_iface0 = socket(AF_PACKET, SOCK_RAW)
           self.s_iface0.bind((iface0, ETH_P_ALL)) 
@@ -79,11 +79,11 @@ class sniffer():
        try:
           p = os.read(tap_device, BUFFERSIZE_DEV)
           pkt_scapy = Ether(p) 
-          if hasattr(pkt_scapy, "IP"): 
+          if pkt_scapy.getlayer("IP"):
              pkt_scapy[Ether].dst = mac
              pkt_scapy[IP].src = ip
              del pkt_scapy[IP].chksum
-          if hasattr(pkt_scapy, "TCP"):
+          if pkt_scapy.getlayer("TCP"):
              del pkt_scapy[TCP].chksum
           return str(pkt_scapy)
        except error:
