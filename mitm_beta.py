@@ -95,6 +95,7 @@ class sniffer():
           pkt_scapy = Ether(pkt)
           del pkt_scapy[IP].chksum
           del pkt_scapy[TCP].chksum
+          os.system("arp -s " + pkt_scapy[IP].src + " " + pkt_scapy[Ether].src) 
           pkt_scapy[Ether].dst = "0e:33:7e:2f:19:61"
           pkt_scapy[IP].dst = "1.2.3.4"
           os.write(tap_device, str(pkt_scapy))
