@@ -1,11 +1,15 @@
 from ConfigParser import *
+import pdb
 
 
 class Parse_MitmConfig():
 
     def __init__(self, configFile):
+
+        pdb.set_trace()
         # TODO Check if file exists
-        self.config = config.readfp(open('mitm.conf'))
+        config = ConfigParser()
+        config.readfp(open(configFile))
 
         self.dsp_ip = config.get('Destination', 'ip')
         self.dst_mac = config.get('Destination', 'mac')

@@ -9,10 +9,6 @@ from socket import *
 MTU = 32676     # read from socket without bothering maximum transfer unit
 ETH_P_ALL = 0x03  # capture all bytes of packet including ethernet layer
 
-TUNSETIFF = 0x400454ca  # attach to tun/tap device
-IFF_TAP = 0x0002    # utilize tap device, i.e. including ethernet layer
-IFF_NO_IP = 0x1000  # omit packet information that is added by kernel
-
 ip_src = 0x1a       # position of ip source address in packet
 ip_dst = 0x1e       # position of ip destination address in packet
 port_dst = 0x24     # position of destination port address in packet
