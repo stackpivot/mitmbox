@@ -15,4 +15,7 @@ class Parse_MitmConfig():
         self.src_mac = config.get('Source', 'mac')
         self.src_port = config.get('Source', 'port')
 
+        self.bridge0_interface = config.get('Interfaces', 'bridge0')
+        self.bridge1_interface = config.get('Interfaces', 'bridge1')
+        self.mitm_interface = config.get('Interfaces', 'mitm')
         # TODO: add interfaces to bridge
