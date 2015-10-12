@@ -3,6 +3,9 @@ import struct
 
 
 def init_tapDevices(bridge0_interface, bridge1_interface):
+
+    if "Link" in os.system("ifconfig tap0"):
+        os.system("ip link delete tap0")
     os.system("ifconfig " + bridge0_interface + " promisc")
     os.system("ifconfig " + bridge1_interface + " promisc")
     os.system("ip tuntap add dev tap0 mode tap")
