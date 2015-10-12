@@ -151,8 +151,9 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(description='Ethernet Bridge')
 
-    parser.add_argument("-f", nargs=1, dest="file_name", type=str, action='store',
-                        help='config file to intercept traffic (file syntax of first line: <mac> <ip> <port> (e.g. "04:7d:7b:0f:c1:ca 173.194.116.183 80")')
+    parser.add_argument("-c", nargs=1, dest="config_file", type=str, action='store',
+                        help='config file to intercept traffic', default='mitm.conf')
+
     parser.add_argument("-r", dest="rewrite", action='store_true',
                         help='rewrite mac address on second interface (taken from first interface)')
 
@@ -165,6 +166,7 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
+    mitm_config = Parse_MitmConfig(config_file)
     host1_interface = args.interface1[0]
     mitm_interface = args.interface2[0]
     host2_interface = args.interface3[0]
