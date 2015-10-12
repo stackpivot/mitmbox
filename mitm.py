@@ -25,6 +25,8 @@ from pdb import *
 from scapy.all import *
 from socket import *
 
+from libmitmbox.parse_config import Parse_MitmConfig
+
 MTU = 32676     # read from socket without bothering maximum transfer unit
 ETH_P_ALL = 0x03  # capture all bytes of packet including ethernet layer
 
