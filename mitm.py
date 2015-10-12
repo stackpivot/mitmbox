@@ -32,6 +32,8 @@ thread3 = None
 
 still_running_lock = Lock()
 
+global config
+
 
 def signal_handler(signal, frame):
     still_running_lock.release()
@@ -52,17 +54,17 @@ if __name__ == '__main__':
                         help='rewrite mac address on second interface (taken from first interface)')
 
     args = parser.parse_args()
-    config = Parse_MitmConfig(args.config_file[0])
+    mitm_config = Parse_MitmConfig(args.config_file[0])
 
-    bridge0_interface = config.bridge0_interface
-    bridge1_interface = config.bridge1_interface
-    mitm_interface = config.mitm_interface
+    bridge0_interface = mitm_config.bridge0_interface
+    bridge1_interface = mitm_config.bridge1_interface
+    mitm_interface = mitm_config.mitm_interface
 
     init_tapDevices(bridge0_interface, bridge1_interface)
 
-    sniffer1 = sniffer(bridge0_interface, bridge1_interface, mitm_interface, 0)
-    sniffer2 = sniffer(bridge1_interface, bridge0_interface, mitm_interface, 0)
-    sniffer3 = sniffer(bridge0_interface, bridge1_interface, 0, mitm_interface)
+    sniffer1 = sniffer(bridge0_interface, bridge1_interface, mitm_interface, 0, mitm_config.dst_ip, mitm_config.dst_mac)
+    sniffer2 = sniffer(bridge1_interface, bridge0_interface, mitm_interface, 0, mitm_config.dst_ip, mitm_config.dst_mac)
+    sniffer3 = sniffer(bridge0_interface, bridge1_interface, 0, mitm_interface, mitm_config.dst_ip, mitm_config.dst_mac)
 
     thread1 = Thread(target=sniffer1.recv_send_loop)
     thread2 = Thread(target=sniffer2.recv_send_loop)
