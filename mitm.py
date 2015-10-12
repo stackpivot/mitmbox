@@ -62,15 +62,18 @@ if __name__ == '__main__':
 
     init_tapDevices(bridge0_interface, bridge1_interface)
 
-    sniffer1 = sniffer(bridge0_interface, bridge1_interface, mitm_interface, 0, mitm_config.dst_ip, mitm_config.dst_mac)
-    sniffer2 = sniffer(bridge1_interface, bridge0_interface, mitm_interface, 0, mitm_config.dst_ip, mitm_config.dst_mac)
-    sniffer3 = sniffer(bridge0_interface, bridge1_interface, 0, mitm_interface, mitm_config.dst_ip, mitm_config.dst_mac)
+    sniffer1 = sniffer(bridge0_interface, bridge1_interface,
+                       mitm_interface, 0, mitm_config.dst_ip, mitm_config.dst_mac)
+    sniffer2 = sniffer(bridge1_interface, bridge0_interface,
+                       mitm_interface, 0, mitm_config.dst_ip, mitm_config.dst_mac)
+    sniffer3 = sniffer(bridge0_interface, bridge1_interface, 0,
+                       mitm_interface, mitm_config.dst_ip, mitm_config.dst_mac)
 
     thread1 = Thread(target=sniffer1.recv_send_loop)
     thread2 = Thread(target=sniffer2.recv_send_loop)
     thread3 = Thread(target=sniffer3.recv_send_loop)
 
-    still_running_lock.acquire()
+    # still_running_lock.acquire()
 
     thread1.start()
     thread2.start()
@@ -78,3 +81,5 @@ if __name__ == '__main__':
 
     signal.signal(signal.SIGINT, signal_handler)
     signal.pause()
+
+    sys.exit(0)

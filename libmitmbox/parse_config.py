@@ -11,7 +11,7 @@ class Parse_MitmConfig():
         config = ConfigParser()
         config.readfp(open(configFile))
 
-        self.dsp_ip = config.get('Destination', 'ip')
+        self.dst_ip = config.get('Destination', 'ip')
         self.dst_mac = config.get('Destination', 'mac')
         self.dst_port = config.get('Destination', 'port')
 
@@ -23,4 +23,3 @@ class Parse_MitmConfig():
         self.bridge1_interface = config.get('Interfaces', 'bridge1')
         self.mitm_interface = config.get('Interfaces', 'mitm')
         # TODO: add interfaces to bridge
-

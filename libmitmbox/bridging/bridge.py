@@ -58,12 +58,12 @@ class sniffer():
             self.redirect = lambda pkt: self.s_iface1.send(pkt)
 
     def lock_check(self):
-        return not still_running_lock.locked()
+        return False
 
     # traffic is intercepted based on destination ip address and destination
     # port
     def intercept(self, pkt_ip, pkt_port):
-        set_trace()
+
         if inet_aton(self.dst_ip) == pkt_ip:
             if pkt_port:
                 if struct.pack(">H", int(port[:-1])) == pkt_port:
