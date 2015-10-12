@@ -18,9 +18,9 @@ from pdb import *
 from scapy.all import *
 from socket import *
 
-from .parse_config import Parse_MitmConfig
+from .bridging.parse_config import Parse_MitmConfig
 from .bridging.bridge import sniffer
-from .tapDevice import init_tapDevices
+from .bridging.tapDevice import init_tapDevices
 
 
 thread1 = None
