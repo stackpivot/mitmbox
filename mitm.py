@@ -151,7 +151,7 @@ def signal_handler(signal, frame):
 
 if __name__ == '__main__':
 
-    parser = argparse.ArgumentParser(description='Ethernet Bridge')
+    parser = argparse.ArgumentParser(description='mitmbox ethernet intercepter')
 
     parser.add_argument("-c", nargs=1, dest="config_file", type=str, action='store',
                         help='config file to intercept traffic', default='mitm.conf')
@@ -168,17 +168,21 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    mitm_config = Parse_MitmConfig(config_file)
-    host1_interface = args.interface1[0]
+    config = Parse_MitmConfig(config_file)
+
+    config.bridge0_interface
+    config.bridge1_interface
+    config.mitm_interface
+    bridge0_interface = args.interface1[0]
     mitm_interface = args.interface2[0]
-    host2_interface = args.interface3[0]
+    bridge1_interface = args.interface3[0]
 
     if args.file_name:
         file = open(args.file_name[0]).readline()
         mac, ip, port = file.split(" ")
 
-    os.system("ifconfig " + host1_interface + " promisc")
-    os.system("ifconfig " + host2_interface + " promisc")
+    os.system("ifconfig " + bridge0_interface + " promisc")
+    os.system("ifconfig " + bridge1_interface + " promisc")
     os.system("ip tuntap add dev tap0 mode tap")
     os.system("ifconfig tap0 down")
     os.system("ifconfig tap0 hw ether 0e:33:7e:2f:19:61")
@@ -191,9 +195,9 @@ if __name__ == '__main__':
     flags = struct.pack('16sH', "tap0", IFF_TAP | IFF_NO_IP)
     fcntl.ioctl(tap_device, TUNSETIFF, flags)
 
-    sniffer1 = sniffer(host1_interface, host2_interface, mitm_interface, 0)
-    sniffer2 = sniffer(host2_interface, host1_interface, mitm_interface, 0)
-    sniffer3 = sniffer(host1_interface, host2_interface, 0, mitm_interface)
+    sniffer1 = sniffer(bridge0_interface, bridge1_interface, mitm_interface, 0)
+    sniffer2 = sniffer(bridge1_interface, bridge0_interface, mitm_interface, 0)
+    sniffer3 = sniffer(bridge0_interface, bridge1_interface, 0, mitm_interface)
 
     thread1 = Thread(target=sniffer1.recv_send_loop)
     thread2 = Thread(target=sniffer2.recv_send_loop)
