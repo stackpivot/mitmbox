@@ -94,7 +94,8 @@ class sniffer():
         try:
             pkt_scapy = Ether(pkt)
             del pkt_scapy[IP].chksum
-            del pkt_scapy[TCP].chksum
+            if TCP in pkt_scapy:
+                del pkt_scapy[TCP].chksum
             os.system(
                 "arp -s " + pkt_scapy[IP].src + " " + pkt_scapy[Ether].src)
             pkt_scapy[Ether].dst = "0e:33:7e:2f:19:61"
