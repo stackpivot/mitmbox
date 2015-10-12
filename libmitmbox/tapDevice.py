@@ -7,7 +7,7 @@ IFF_TAP = 0x0002    # utilize tap device, i.e. including ethernet layer
 IFF_NO_IP = 0x1000  # omit packet information that is added by kernel
 
 
-def initialise_tapDevices(bridge0_interface, bridge1_interface):
+def init_tapDevices(bridge0_interface, bridge1_interface):
     os.system("ifconfig " + bridge0_interface + " promisc")
     os.system("ifconfig " + bridge1_interface + " promisc")
     os.system("ip tuntap add dev tap0 mode tap")
