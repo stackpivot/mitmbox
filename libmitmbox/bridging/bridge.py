@@ -63,7 +63,7 @@ class sniffer():
     # traffic is intercepted based on destination ip address and destination
     # port
     def intercept(self, pkt_ip, pkt_port):
-
+        port = '80'
         if inet_aton(self.dst_ip) == pkt_ip:
             if pkt_port:
                 if struct.pack(">H", int(port[:-1])) == pkt_port:
