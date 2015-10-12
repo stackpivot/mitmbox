@@ -17,6 +17,11 @@ port_dst = 0x24     # position of destination port address in packet
 BUFFERSIZE_DEV = 65000
 
 
+tap_device = os.open('/dev/net/tun', os.O_RDWR)
+flags = struct.pack('16sH', "tap0", IFF_TAP | IFF_NO_IP)
+fcntl.ioctl(tap_device, TUNSETIFF, flags)
+
+
 class sniffer():
 
     def __init__(self, iface0, iface1, mitm_in, mitm_out):
