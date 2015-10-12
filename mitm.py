@@ -1,2 +1,3 @@
-from libmitmbox import main
+#! /usr/bin/python
+from libmitmbox.main import mitmbox
 mitmbox()
