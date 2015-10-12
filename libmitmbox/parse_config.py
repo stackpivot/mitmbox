@@ -23,3 +23,4 @@ class Parse_MitmConfig():
         self.bridge1_interface = config.get('Interfaces', 'bridge1')
         self.mitm_interface = config.get('Interfaces', 'mitm')
         # TODO: add interfaces to bridge
+
