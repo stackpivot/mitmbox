@@ -31,6 +31,8 @@ class sniffer():
 
     def __init__(self, iface0, iface1, mitm_in, mitm_out, dst_ip, dst_mac):
 
+        self.dst_ip = dst_ip
+        self.dst_mac = dst_mac
         # traffic going from bridged interfaces to man-in-the-middle interface
         if mitm_in:
             self.s_iface0 = socket(AF_PACKET, SOCK_RAW, htons(ETH_P_ALL))
@@ -62,7 +64,7 @@ class sniffer():
     # port
     def intercept(self, pkt_ip, pkt_port):
         set_trace()
-        if inet_aton(dst_ip) == pkt_ip:
+        if inet_aton(self.dst_ip) == pkt_ip:
             if pkt_port:
                 if struct.pack(">H", int(port[:-1])) == pkt_port:
                     return True
@@ -77,8 +79,8 @@ class sniffer():
             p = os.read(tap_device, BUFFERSIZE_DEV)
             pkt_scapy = Ether(p)
             if pkt_scapy.getlayer("IP"):
-                pkt_scapy[Ether].dst = dst_mac
-                pkt_scapy[IP].src = dst_ip
+                pkt_scapy[Ether].dst = self.dst_mac
+                pkt_scapy[IP].src = self.dst_ip
                 del pkt_scapy[IP].chksum
             if pkt_scapy.getlayer("TCP"):
                 del pkt_scapy[TCP].chksum
