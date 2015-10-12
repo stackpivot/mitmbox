@@ -14,10 +14,7 @@ GAI NetConsult GmbH
 
 import sys
 import signal
-import os
 import argparse
-import struct
-import fcntl
 from threading import *
 from ConfigParser import *
 from pdb import *
@@ -26,6 +23,7 @@ from socket import *
 
 from libmitmbox.parse_config import Parse_MitmConfig
 from libmitmbox.bridging.bridge import sniffer
+from libmitmbox.tapDevice import init_tapDevices
 
 
 thread1 = None
@@ -60,23 +58,7 @@ if __name__ == '__main__':
     bridge1_interface = config.bridge1_interface
     mitm_interface = config.mitm_interface
 
-    if args.file_name:
-        file = open(args.file_name[0]).readline()
-        mac, ip, port = file.split(" ")
-
-    os.system("ifconfig " + bridge0_interface + " promisc")
-    os.system("ifconfig " + bridge1_interface + " promisc")
-    os.system("ip tuntap add dev tap0 mode tap")
-    os.system("ifconfig tap0 down")
-    os.system("ifconfig tap0 hw ether 0e:33:7e:2f:19:61")
-    os.system("ifconfig tap0 up")
-    os.system("ifconfig tap0 1.2.3.4")
-    os.system("route add -net 192.168.0.0 netmask 255.255.0.0 tap0")
-    # todo: ARP request for source IP must answered
-
-    tap_device = os.open('/dev/net/tun', os.O_RDWR)
-    flags = struct.pack('16sH', "tap0", IFF_TAP | IFF_NO_IP)
-    fcntl.ioctl(tap_device, TUNSETIFF, flags)
+    init_tapDevices(bridge0_interface, bridge1_interface)
 
     sniffer1 = sniffer(bridge0_interface, bridge1_interface, mitm_interface, 0)
     sniffer2 = sniffer(bridge1_interface, bridge0_interface, mitm_interface, 0)
