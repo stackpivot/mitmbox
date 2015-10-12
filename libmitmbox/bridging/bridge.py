@@ -61,7 +61,7 @@ class sniffer():
     # traffic is intercepted based on destination ip address and destination
     # port
     def intercept(self, pkt_ip, pkt_port):
-        if inet_aton(ip) == pkt_ip:
+        if inet_aton(config.dst_ip) == pkt_ip:
             if pkt_port:
                 if struct.pack(">H", int(port[:-1])) == pkt_port:
                     return True
@@ -76,8 +76,8 @@ class sniffer():
             p = os.read(tap_device, BUFFERSIZE_DEV)
             pkt_scapy = Ether(p)
             if pkt_scapy.getlayer("IP"):
-                pkt_scapy[Ether].dst = mac
-                pkt_scapy[IP].src = ip
+                pkt_scapy[Ether].dst = config.dst_mac
+                pkt_scapy[IP].src = config.dst_ip
                 del pkt_scapy[IP].chksum
             if pkt_scapy.getlayer("TCP"):
                 del pkt_scapy[TCP].chksum
