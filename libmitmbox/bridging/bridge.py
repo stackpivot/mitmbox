@@ -16,6 +16,10 @@ port_dst = 0x24     # position of destination port address in packet
 # read from tap device without bothering maximum transfer unit
 BUFFERSIZE_DEV = 65000
 
+TUNSETIFF = 0x400454ca  # attach to tun/tap device
+IFF_TAP = 0x0002    # utilize tap device, i.e. including ethernet layer
+IFF_NO_IP = 0x1000  # omit packet information that is added by kernel
+
 
 tap_device = os.open('/dev/net/tun', os.O_RDWR)
 flags = struct.pack('16sH', "tap0", IFF_TAP | IFF_NO_IP)
