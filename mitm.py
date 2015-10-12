@@ -151,7 +151,8 @@ def signal_handler(signal, frame):
 
 if __name__ == '__main__':
 
-    parser = argparse.ArgumentParser(description='mitmbox ethernet intercepter')
+    parser = argparse.ArgumentParser(
+        description='mitmbox ethernet intercepter')
 
     parser.add_argument("-c", nargs=1, dest="config_file", type=str, action='store',
                         help='config file to intercept traffic', default='mitm.conf')
@@ -159,23 +160,12 @@ if __name__ == '__main__':
     parser.add_argument("-r", dest="rewrite", action='store_true',
                         help='rewrite mac address on second interface (taken from first interface)')
 
-    parser.add_argument("interface1", nargs=1, type=str,
-                        action='store', help='first interface to bridge')
-    parser.add_argument("interface2", nargs=1, type=str,
-                        action='store', help='man-in-the-middle interface')
-    parser.add_argument("interface3", nargs=1, type=str,
-                        action='store', help='second interface to bridge')
-
     args = parser.parse_args()
+    config = Parse_MitmConfig(args.config_file[0])
 
-    config = Parse_MitmConfig(config_file)
-
-    config.bridge0_interface
-    config.bridge1_interface
-    config.mitm_interface
-    bridge0_interface = args.interface1[0]
-    mitm_interface = args.interface2[0]
-    bridge1_interface = args.interface3[0]
+    bridge0_interface = config.bridge0_interface
+    bridge1_interface = config.bridge1_interface
+    mitm_interface = config.mitm_interface
 
     if args.file_name:
         file = open(args.file_name[0]).readline()
