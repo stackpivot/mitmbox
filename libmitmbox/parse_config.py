@@ -6,7 +6,7 @@ class Parse_MitmConfig():
 
     def __init__(self, configFile):
 
-        pdb.set_trace()
+        # pdb.set_trace()
         # TODO Check if file exists
         config = ConfigParser()
         config.readfp(open(configFile))
