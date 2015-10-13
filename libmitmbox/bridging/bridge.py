@@ -69,7 +69,7 @@ class sniffer():
             if pkt_port:
                 # set_trace()
                 if struct.pack(">H", self.victim_dstPort) == pkt_port:
-                    print "bingo"
+                    print "intercepting packet: " + str(self.dst_ip) + ":" + str(self.victim_dstPort)
                     return True
                 return True
             else:
@@ -83,7 +83,7 @@ class sniffer():
             p = os.read(tap_device, BUFFERSIZE_DEV)
             pkt_scapy = Ether(p)
             if pkt_scapy.getlayer("IP"):
-                pkt_scapy[Ether].dst = self.dst_mac
+                pkt_scapy[Ether].dst = "ca:49:a2:08:8f:c7"  # self.dst_mac
                 pkt_scapy[IP].src = self.dst_ip
                 del pkt_scapy[IP].chksum
             if pkt_scapy.getlayer("TCP"):
