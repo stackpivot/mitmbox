@@ -61,9 +61,6 @@ class sniffer():
             self.send = lambda pkt: self.s_iface0.send(pkt)
             self.redirect = lambda pkt: self.s_iface1.send(pkt)
 
-    def lock_check(self):
-        return False
-
     # traffic is intercepted based on destination ip address and destination
     # port
     def intercept(self, pkt_ip, pkt_port):
