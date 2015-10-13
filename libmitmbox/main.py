@@ -12,7 +12,7 @@ import time
 from .bridging.parse_config import Parse_MitmConfig
 from .bridging.bridge import sniffer
 from .bridging.tapDevice import init_tapDevices
-
+from .common import bcolors
 
 thread1 = None
 thread2 = None
@@ -23,13 +23,6 @@ still_running_lock = Lock()
 # currently this Queue is used to tell the Bridging Threads to quit.
 # int the future this feature could be used, to trigger a reread of the config
 control_queue = Queue.Queue()
-
-
-def signal_handler(signal, frame):
-    print "\nEXITING MITMBOX"
-    control_queue.put(('quit',))
-    time.sleep(1)
-    sys.exit(0)
 
 
 def mitmbox():
@@ -50,11 +43,11 @@ def mitmbox():
     init_tapDevices(bridge0_interface, bridge1_interface)
 
     sniffer1 = sniffer(bridge0_interface, bridge1_interface,
-                       mitm_interface, 0, mitm_config.dst_ip, mitm_config.dst_mac, mitm_config.dst_port, control_queue)
+                       mitm_interface, 0, mitm_config, control_queue)
     sniffer2 = sniffer(bridge1_interface, bridge0_interface,
-                       mitm_interface, 0, mitm_config.dst_ip, mitm_config.dst_mac, mitm_config.dst_port, control_queue)
+                       mitm_interface, 0, mitm_config, control_queue)
     sniffer3 = sniffer(bridge0_interface, bridge1_interface, 0,
-                       mitm_interface, mitm_config.dst_ip, mitm_config.dst_mac, mitm_config.dst_port, control_queue)
+                       mitm_interface, mitm_config, control_queue)
 
     thread1 = Thread(target=sniffer1.recv_send_loop)
     thread2 = Thread(target=sniffer2.recv_send_loop)
@@ -66,7 +59,35 @@ def mitmbox():
     thread2.start()
     thread3.start()
 
-    signal.signal(signal.SIGINT, signal_handler)
-    signal.pause()
+    finish = False
+    try:
+        while not finish:
+            time.sleep(1)  # delay is a quick hack to kind of sync output
+
+            command = raw_input('mitmbox> ').split()
+            if command:
+                cmd = command[0].lower().strip()
+                if cmd in ['help', '?']:
+                    print "rld: reload config file\n" + \
+                          "exit: stop poisoning and exit"
+
+                elif cmd in ['quit', 'exit', 'stop', 'leave']:
+                    control_queue.put(('quit', 'quit', 'quit',))
+                    finish = True
+                elif cmd in ['rld', 'refresh', 'reload']:
+                    print bcolors.WARNING + "reloading configuration file" + bcolors.ENDC
+                    mitm_config.trigger_parsing()
+                    sniffer1.update_config(mitm_config)
+                    sniffer2.update_config(mitm_config)
+                    sniffer3.update_config(mitm_config)
+
+    except KeyboardInterrupt:
+        # Ctrl+C detected, so let's finish the poison thread and exit
+        finish = True
+        control_queue.put(('quit', 'quit', 'quit',))
+        sys.exit(0)
+
+    #signal.signal(signal.SIGINT, signal_handler)
+    # signal.pause()
 
     sys.exit(0)
