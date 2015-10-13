@@ -1,14 +1,3 @@
-"""
-
-Ethernet Bridge
-
-Description: Ethernet bridge for man-in-the-middle attacks.
-
-Markus Mahrla, Jon Barg
-GAI NetConsult GmbH
-
-"""
-
 import sys
 import signal
 import argparse
@@ -46,9 +35,6 @@ def mitmbox():
     parser.add_argument("-c", nargs=1, dest="config_file", type=str, action='store',
                         help='config file to intercept traffic', default='mitm.conf')
 
-    parser.add_argument("-r", dest="rewrite", action='store_true',
-                        help='rewrite mac address on second interface (taken from first interface)')
-
     args = parser.parse_args()
     mitm_config = Parse_MitmConfig(args.config_file[0])
 
@@ -59,11 +45,11 @@ def mitmbox():
     init_tapDevices(bridge0_interface, bridge1_interface)
 
     sniffer1 = sniffer(bridge0_interface, bridge1_interface,
-                       mitm_interface, 0, mitm_config.dst_ip, mitm_config.dst_mac)
+                       mitm_interface, 0, mitm_config.dst_ip, mitm_config.dst_mac, mitm_config.dst_port)
     sniffer2 = sniffer(bridge1_interface, bridge0_interface,
-                       mitm_interface, 0, mitm_config.dst_ip, mitm_config.dst_mac)
+                       mitm_interface, 0, mitm_config.dst_ip, mitm_config.dst_mac, mitm_config.dst_port)
     sniffer3 = sniffer(bridge0_interface, bridge1_interface, 0,
-                       mitm_interface, mitm_config.dst_ip, mitm_config.dst_mac)
+                       mitm_interface, mitm_config.dst_ip, mitm_config.dst_mac, mitm_config.dst_port)
 
     thread1 = Thread(target=sniffer1.recv_send_loop)
     thread2 = Thread(target=sniffer2.recv_send_loop)

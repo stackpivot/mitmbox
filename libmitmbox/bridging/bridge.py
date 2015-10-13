@@ -29,10 +29,11 @@ fcntl.ioctl(tap_device, TUNSETIFF, flags)
 
 class sniffer():
 
-    def __init__(self, iface0, iface1, mitm_in, mitm_out, dst_ip, dst_mac):
+    def __init__(self, iface0, iface1, mitm_in, mitm_out, dst_ip, dst_mac, victim_dstPort):
 
         self.dst_ip = dst_ip
         self.dst_mac = dst_mac
+        self.victim_dstPort = int(victim_dstPort)
         # traffic going from bridged interfaces to man-in-the-middle interface
         if mitm_in:
             self.s_iface0 = socket(AF_PACKET, SOCK_RAW, htons(ETH_P_ALL))
@@ -63,11 +64,14 @@ class sniffer():
     # traffic is intercepted based on destination ip address and destination
     # port
     def intercept(self, pkt_ip, pkt_port):
-        port = '80'
+
         if inet_aton(self.dst_ip) == pkt_ip:
             if pkt_port:
-                if struct.pack(">H", int(port[:-1])) == pkt_port:
+                # set_trace()
+                if struct.pack(">H", self.victim_dstPort) == pkt_port:
+                    print "bingo"
                     return True
+                return True
             else:
                 return True
         return False
