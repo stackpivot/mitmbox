@@ -6,7 +6,7 @@ from pdb import *
 from scapy.all import *
 from socket import *
 import fcntl
-import Queue
+from ..common import bcolors
 
 MTU = 32676     # read from socket without bothering maximum transfer unit
 ETH_P_ALL = 0x03  # capture all bytes of packet including ethernet layer
@@ -30,11 +30,9 @@ fcntl.ioctl(tap_device, TUNSETIFF, flags)
 
 class sniffer():
 
-    def __init__(self, iface0, iface1, mitm_in, mitm_out, dst_ip, dst_mac, victim_dstPort, control_queue):
+    def __init__(self, iface0, iface1, mitm_in, mitm_out, mitm_config, control_queue):
 
-        self.dst_ip = dst_ip
-        self.dst_mac = dst_mac
-        self.victim_dstPort = int(victim_dstPort)
+        self.update_config(mitm_config)
 
         self.control_queue = control_queue
         # traffic going from bridged interfaces to man-in-the-middle interface
@@ -61,15 +59,20 @@ class sniffer():
             self.send = lambda pkt: self.s_iface0.send(pkt)
             self.redirect = lambda pkt: self.s_iface1.send(pkt)
 
+    # Call this function, to update the config
+    def update_config(self, mitm_config):
+        self.dst_ip = mitm_config.dst_ip
+        self.dst_mac = mitm_config.dst_mac
+        self.dst_port = mitm_config.dst_port
+
     # traffic is intercepted based on destination ip address and destination
     # port
     def intercept(self, pkt_ip, pkt_port):
 
         if inet_aton(self.dst_ip) == pkt_ip:
             if pkt_port:
-                # set_trace()
-                if struct.pack(">H", self.victim_dstPort) == pkt_port:
-                    print "intercepting packet: " + str(self.dst_ip) + ":" + str(self.victim_dstPort)
+                if struct.pack(">H", int(self.dst_port)) == pkt_port:
+                    print bcolors.OKGREEN + "intercepting packet: " + str(self.dst_ip) + ":" + str(self.dst_port) + bcolors.ENDC
                     return True
                 return True
             else:
