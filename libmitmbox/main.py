@@ -20,6 +20,8 @@ thread3 = None
 
 still_running_lock = Lock()
 
+# currently this Queue is used to tell the Bridging Threads to quit.
+# int the future this feature could be used, to trigger a reread of the config
 control_queue = Queue.Queue()
 
 
