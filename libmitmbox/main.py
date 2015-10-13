@@ -31,10 +31,10 @@ def mitmbox():
         description='mitmbox ethernet intercepter')
 
     parser.add_argument("-c", nargs=1, dest="config_file", type=str, action='store',
-                        help='config file to intercept traffic', default='mitm.conf')
+                        help='config file to intercept traffic', default='/root/mitmbox/mitm.conf')
 
     args = parser.parse_args()
-    mitm_config = Parse_MitmConfig(args.config_file[0])
+    mitm_config = Parse_MitmConfig(args.config_file)
 
     bridge0_interface = mitm_config.bridge0_interface
     bridge1_interface = mitm_config.bridge1_interface
@@ -60,6 +60,7 @@ def mitmbox():
     thread3.start()
 
     finish = False
+    os.system('clear')
     try:
         while not finish:
             time.sleep(1)  # delay is a quick hack to kind of sync output
@@ -68,12 +69,12 @@ def mitmbox():
             if command:
                 cmd = command[0].lower().strip()
                 if cmd in ['help', '?']:
-                    print "rld: reload config file\n" + \
-                          "exit: stop poisoning and exit"
+                    print "rld: reload configuration file\n" + \
+                          "exit: stop mitmbox and exit"
 
                 elif cmd in ['quit', 'exit', 'stop', 'leave']:
-                    control_queue.put(('quit', 'quit', 'quit',))
                     finish = True
+
                 elif cmd in ['rld', 'refresh', 'reload']:
                     print bcolors.WARNING + "reloading configuration file" + bcolors.ENDC
                     mitm_config.trigger_parsing()
@@ -84,10 +85,8 @@ def mitmbox():
     except KeyboardInterrupt:
         # Ctrl+C detected, so let's finish the poison thread and exit
         finish = True
-        control_queue.put(('quit', 'quit', 'quit',))
-        sys.exit(0)
-
-    #signal.signal(signal.SIGINT, signal_handler)
-    # signal.pause()
-
+    print bcolors.FAIL + "\n\nEXITING" + bcolors.ENDC + " ... cleaning up"
+    control_queue.put(('endThread1',))
+    control_queue.put(('endThread2',))
+    control_queue.put(('endThread3',))
     sys.exit(0)
