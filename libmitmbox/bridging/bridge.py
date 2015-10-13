@@ -6,6 +6,7 @@ from pdb import *
 from scapy.all import *
 from socket import *
 import fcntl
+import Queue
 
 MTU = 32676     # read from socket without bothering maximum transfer unit
 ETH_P_ALL = 0x03  # capture all bytes of packet including ethernet layer
@@ -29,11 +30,13 @@ fcntl.ioctl(tap_device, TUNSETIFF, flags)
 
 class sniffer():
 
-    def __init__(self, iface0, iface1, mitm_in, mitm_out, dst_ip, dst_mac, victim_dstPort):
+    def __init__(self, iface0, iface1, mitm_in, mitm_out, dst_ip, dst_mac, victim_dstPort, control_queue):
 
         self.dst_ip = dst_ip
         self.dst_mac = dst_mac
         self.victim_dstPort = int(victim_dstPort)
+
+        self.control_queue = control_queue
         # traffic going from bridged interfaces to man-in-the-middle interface
         if mitm_in:
             self.s_iface0 = socket(AF_PACKET, SOCK_RAW, htons(ETH_P_ALL))
@@ -115,15 +118,18 @@ class sniffer():
 
     def recv_send_loop(self):
         pkt = ""
-        while True:
+        finish = False
+        while not finish:
             try:
                 pkt = self.receive()
             except error:
                 pass
+
             if pkt:
                 if self.intercept(pkt[ip_src:][:4], None) or self.intercept(pkt[ip_dst:][:4], pkt[port_dst:][:2]):
                     self.redirect(pkt)
                 else:
                     self.send(pkt)
-            if self.lock_check() == True:
-                break
+
+            if not self.control_queue.empty():
+                finish = True

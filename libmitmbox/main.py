@@ -6,6 +6,8 @@ from ConfigParser import *
 from pdb import *
 from scapy.all import *
 from socket import *
+import Queue
+import time
 
 from .bridging.parse_config import Parse_MitmConfig
 from .bridging.bridge import sniffer
@@ -18,12 +20,13 @@ thread3 = None
 
 still_running_lock = Lock()
 
+control_queue = Queue.Queue()
+
 
 def signal_handler(signal, frame):
-    still_running_lock.release()
-    thread1.join()
-    thread2.join()
-    thread3.join()
+    print "\nEXITING MITMBOX"
+    control_queue.put(('quit',))
+    time.sleep(1)
     sys.exit(0)
 
 
@@ -45,11 +48,11 @@ def mitmbox():
     init_tapDevices(bridge0_interface, bridge1_interface)
 
     sniffer1 = sniffer(bridge0_interface, bridge1_interface,
-                       mitm_interface, 0, mitm_config.dst_ip, mitm_config.dst_mac, mitm_config.dst_port)
+                       mitm_interface, 0, mitm_config.dst_ip, mitm_config.dst_mac, mitm_config.dst_port, control_queue)
     sniffer2 = sniffer(bridge1_interface, bridge0_interface,
-                       mitm_interface, 0, mitm_config.dst_ip, mitm_config.dst_mac, mitm_config.dst_port)
+                       mitm_interface, 0, mitm_config.dst_ip, mitm_config.dst_mac, mitm_config.dst_port, control_queue)
     sniffer3 = sniffer(bridge0_interface, bridge1_interface, 0,
-                       mitm_interface, mitm_config.dst_ip, mitm_config.dst_mac, mitm_config.dst_port)
+                       mitm_interface, mitm_config.dst_ip, mitm_config.dst_mac, mitm_config.dst_port, control_queue)
 
     thread1 = Thread(target=sniffer1.recv_send_loop)
     thread2 = Thread(target=sniffer2.recv_send_loop)
