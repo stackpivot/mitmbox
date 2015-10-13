@@ -1,5 +1,4 @@
 import sys
-import signal
 import argparse
 from threading import *
 from ConfigParser import *

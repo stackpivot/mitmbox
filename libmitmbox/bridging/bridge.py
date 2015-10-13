@@ -72,7 +72,7 @@ class sniffer():
         if inet_aton(self.dst_ip) == pkt_ip:
             if pkt_port:
                 if struct.pack(">H", int(self.dst_port)) == pkt_port:
-                    print bcolors.OKGREEN + "\n[intercepting packet]: " + str(self.dst_ip) + ":" + str(self.dst_port) + bcolors.ENDC + "\n"
+                    print bcolors.OKGREEN + "\n[intercepting packet]: " + str(self.dst_ip) + ":" + str(self.dst_port) + bcolors.ENDC
                     return True
                 return True
             else:
