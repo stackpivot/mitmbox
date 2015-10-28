@@ -31,10 +31,10 @@ TUNSETIFF = 0x400454ca  # attach to tun/tap device
 IFF_TUN = 0x0001        # utilize tap device, i.e. including ethernet layer
 IFF_NO_IP = 0x1000      # omit packet information that is added by kernel
 
-SRC_IP_POS = 0x1a           # position of ip source address in packet
-DST_IP_POS = 0x1e           # position of ip destination address in packet
-SRC_PORT_POS = 0x22         # position of source port address in packet
-DST_PORT_POS = 0x24         # position of destination port address in packet
+SRC_IP_POS = 0x1a       # position of ip source address in packet
+DST_IP_POS = 0x1e       # position of ip destination address in packet
+SRC_PORT_POS = 0x22     # position of source port address in packet
+DST_PORT_POS = 0x24     # position of destination port address in packet
 
 BUFFERSIZE_DEV = 65000  # read from tap device without bothering on MTU
 
@@ -120,7 +120,6 @@ class MITMBridge():
             pkt_scapy = IP(pkt[14:])
             del pkt_scapy[IP].chksum
             del pkt_scapy[TCP].chksum
-            pkt_scapy[IP].dst = "1.2.3.4"
             os.write(tun_device, str(pkt_scapy))
         except error:
             pass
@@ -246,12 +245,19 @@ if __name__ == '__main__':
     # set bridged interface in promiscuous mode
     os.system("ifconfig " + interface1 + " promisc")
     os.system("ifconfig " + interface2 + " promisc")
-    # add tun device and assign IP address
-    os.system("ip tuntap add dev tun0 mode tun")
-    os.system("ifconfig tun0 1.2.3.4")
-    # network route is added so kernel sends traffic via tun device
+
+    # utilize tun device to intercept traffic
     if mode != 0:
+        # add tun device and assign IP address
+        os.system("ip tuntap add dev tun0 mode tun")
+        os.system("ifconfig tun0 1.2.3.4")
+        # add network route so kernel sends traffic via tun device by default
         os.system("route add -net 0.0.0.0 netmask 0.0.0.0 tun0")
+        # rewrite ip address of tun device via iptables which also
+        # facilitates transparent proxying for user-space applications
+        os.system("iptables -t nat -F")
+        os.system("iptables -t nat -A PREROUTING -i tun0 -p tcp -j REDIRECT")
+        os.system("iptables -t nat -A POSTROUTING -s 1.2.3.4 -j SNAT --to-source " + client_ip)
 
     # create file descriptor for tun device to read from and write to
     tun_device = os.open('/dev/net/tun', os.O_RDWR)
