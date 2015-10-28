@@ -70,21 +70,24 @@ class MITMBridge():
     def lock_check(self):
         return not still_running_lock.locked()
 
-    # traffic is intercepted based on server's ip address and network port
-    def filter(self, pkt_ip, pkt_port):
-        if inet_aton(server_ip) == pkt_ip:
+    # traffic is intercepted based on ip address and network port
+    def filter(self, ip, port, pkt_ip, pkt_port):
+        if inet_aton(ip) == pkt_ip:
             if pkt_port:
-                if struct.pack(">H", int(server_port[:-1])) == pkt_port:
+                if struct.pack(">H", int(port[:-1])) == pkt_port:
                     return True
             else:
                 return True
         return False
 
     def source_is_server(self, pkt):
-        return self.filter(pkt[SRC_IP_POS:SRC_IP_POS+4], pkt[SRC_PORT_POS:SRC_PORT_POS+2])
+        return self.filter(server_ip, server_port, pkt[SRC_IP_POS:SRC_IP_POS+4], pkt[SRC_PORT_POS:SRC_PORT_POS+2])
 
     def destination_is_server(self, pkt):
-        return self.filter(pkt[DST_IP_POS:DST_IP_POS+4], pkt[DST_PORT_POS:DST_PORT_POS+2])
+        return self.filter(server_ip, server_port, pkt[DST_IP_POS:DST_IP_POS+4], pkt[DST_PORT_POS:DST_PORT_POS+2])
+
+    def destination_is_mitm(self, pkt):
+        return self.filter(client_ip, server_port, pkt[DST_IP_POS:DST_IP_POS+4], pkt[SRC_PORT_POS:SRC_PORT_POS+2])
 
     # traffic leaving mitm interface is written back to original addresses
     def device_receive(self):
@@ -99,15 +102,14 @@ class MITMBridge():
             if pkt_scapy.getlayer("TCP"):
                 del pkt_scapy[TCP].chksum
 
-            # adjust packet if it is going to server
-            if pkt_scapy[IP].dst == server_ip:
-                pkt_scapy[IP].src = client_ip
-                return str(Ether(dst=server_mac, src=client_mac) / pkt_scapy)
-
             # adjust packet if it is going to client
             if pkt_scapy[IP].dst == client_ip:
                 pkt_scapy[IP].src = server_ip
                 return str(Ether(dst=client_mac, src=server_mac) / pkt_scapy)
+            # adjust packet to any other destination
+            else:
+                pkt_scapy[IP].src = client_ip
+                return str(Ether(dst=server_mac, src=client_mac) / pkt_scapy)
 
         except error:
             pass
@@ -168,7 +170,7 @@ class MITMBridge():
                     if self.receive == self.socket_receive:
                         # traffic from client and server is diverted to mitm
                         if self.destination_is_server(pkt) or\
-                           self.source_is_server(pkt):
+                           self.destination_is_mitm(pkt):
                             self.intercept(pkt)
                         else:
                             self.send(pkt)
