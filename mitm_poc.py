@@ -249,10 +249,9 @@ if __name__ == '__main__':
     # add tun device and assign IP address
     os.system("ip tuntap add dev tun0 mode tun")
     os.system("ifconfig tun0 1.2.3.4")
-    # network routes are added so kernel sends traffic via tun device
+    # network route is added so kernel sends traffic via tun device
     if mode != 0:
-        os.system("route add -host " + client_ip + " tun0")
-        os.system("route add -host " + server_ip + " tun0")
+        os.system("route add -net 0.0.0.0 netmask 0.0.0.0 tun0")
 
     # create file descriptor for tun device to read from and write to
     tun_device = os.open('/dev/net/tun', os.O_RDWR)
