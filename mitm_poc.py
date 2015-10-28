@@ -208,7 +208,8 @@ if __name__ == '__main__':
                         action='store',
                         help='config file to run different modes (interfaces' +
                         ' are bridged in each mode)\nsyntax of first line: ' +
-                        '<mode> <client mac> <client ip> <server mac> ' +
+                        '<mode> <client mac> <client ip> <server/gateway ' +
+                        'mac> ' +
                         '<server ip> <server port>\nmode 0: bridge mode (' +
                         'client and server addresses are ignored)\n' +
                         'mode 1: impersonate a client while connecting to ' +
