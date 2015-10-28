@@ -31,10 +31,10 @@ TUNSETIFF = 0x400454ca  # attach to tun/tap device
 IFF_TUN = 0x0001        # utilize tap device, i.e. including ethernet layer
 IFF_NO_IP = 0x1000      # omit packet information that is added by kernel
 
-src_ip = 0x1a           # position of ip source address in packet
-dst_ip = 0x1e           # position of ip destination address in packet
-src_port = 0x22         # position of source port address in packet
-dst_port = 0x24         # position of destination port address in packet
+SRC_IP_POS = 0x1a           # position of ip source address in packet
+DST_IP_POS = 0x1e           # position of ip destination address in packet
+SRC_PORT_POS = 0x22         # position of source port address in packet
+DST_PORT_POS = 0x24         # position of destination port address in packet
 
 BUFFERSIZE_DEV = 65000  # read from tap device without bothering on MTU
 
@@ -81,10 +81,10 @@ class MITMBridge():
         return False
 
     def source_is_server(self, pkt):
-        return self.filter(pkt[src_ip:src_ip+4], pkt[src_port:src_port+2])
+        return self.filter(pkt[SRC_IP_POS:SRC_IP_POS+4], pkt[SRC_PORT_POS:SRC_PORT_POS+2])
 
     def destination_is_server(self, pkt):
-        return self.filter(pkt[dst_ip:dst_ip+4], pkt[dst_port:dst_port+2])
+        return self.filter(pkt[DST_IP_POS:DST_IP_POS+4], pkt[DST_PORT_POS:DST_PORT_POS+2])
 
     # traffic leaving mitm interface is written back to original addresses
     def device_receive(self):
