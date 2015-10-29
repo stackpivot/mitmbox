@@ -65,49 +65,57 @@ class sniffer():
         self.dst_mac = mitm_config.dst_mac
         self.dst_port = mitm_config.dst_port
 
-    # traffic is intercepted based on destination ip address and destination
-    # port
-    def intercept(self, pkt_ip, pkt_port):
-
-        if inet_aton(self.dst_ip) == pkt_ip:
+    # traffic is intercepted based on ip address and network port
+    def filter(self, ip, port, pkt_ip, pkt_port):
+        if inet_aton(ip) == pkt_ip:
             if pkt_port:
-                if struct.pack(">H", int(self.dst_port)) == pkt_port:
-                    print bcolors.OKGREEN + "\n[intercepting packet]: " + str(self.dst_ip) + ":" + str(self.dst_port) + bcolors.ENDC
+                if struct.pack(">H", int(port[:-1])) == pkt_port:
                     return True
-                return True
             else:
                 return True
         return False
 
-    # traffic leaving man-in-the-middle interface is written back to original
-    # addresses
+    def source_is_server(self, pkt):
+        return self.filter(server_ip, server_port, pkt[SRC_IP_POS:SRC_IP_POS + 4], pkt[SRC_PORT_POS:SRC_PORT_POS + 2])
+
+    def destination_is_server(self, pkt):
+        return self.filter(server_ip, server_port, pkt[DST_IP_POS:DST_IP_POS + 4], pkt[DST_PORT_POS:DST_PORT_POS + 2])
+
+    def destination_is_mitm(self, pkt):
+        return self.filter(client_ip, server_port, pkt[DST_IP_POS:DST_IP_POS + 4], pkt[SRC_PORT_POS:SRC_PORT_POS + 2])
+
+    # traffic leaving mitm interface is written back to original addresses
     def device_receive(self):
         try:
-            p = os.read(tap_device, BUFFERSIZE_DEV)
-            pkt_scapy = Ether(p)
+            # read and interpret packet
+            p = os.read(tun_device, BUFFERSIZE_DEV)
+            pkt_scapy = IP(p)
+
+            # delete checksums
             if pkt_scapy.getlayer("IP"):
-                pkt_scapy[Ether].dst = "ca:49:a2:08:8f:c7"  # self.dst_mac
-                pkt_scapy[IP].src = self.dst_ip
                 del pkt_scapy[IP].chksum
             if pkt_scapy.getlayer("TCP"):
                 del pkt_scapy[TCP].chksum
-            return str(pkt_scapy)
+
+            # adjust packet if it is going to client
+            if pkt_scapy[IP].dst == client_ip:
+                pkt_scapy[IP].src = server_ip
+                return str(Ether(dst=client_mac, src=server_mac) / pkt_scapy)
+            # adjust packet to any other destination
+            else:
+                pkt_scapy[IP].src = client_ip
+                return str(Ether(dst=server_mac, src=client_mac) / pkt_scapy)
+
         except error:
             pass
 
-    # traffic to man-in-the-middle interface is modified so it goes through
-    # tcp/ip stack
+    # traffic to mitm interface is modified to be recognised by tcp/ip stack
     def device_send(self, pkt):
         try:
-            pkt_scapy = Ether(pkt)
+            pkt_scapy = IP(pkt[14:])
             del pkt_scapy[IP].chksum
-            if TCP in pkt_scapy:
-                del pkt_scapy[TCP].chksum
-            os.system(
-                "arp -s " + pkt_scapy[IP].src + " " + pkt_scapy[Ether].src)
-            pkt_scapy[Ether].dst = "0e:33:7e:2f:19:61"
-            pkt_scapy[IP].dst = "1.2.3.4"
-            os.write(tap_device, str(pkt_scapy))
+            del pkt_scapy[TCP].chksum
+            os.write(tun_device, str(pkt_scapy))
         except error:
             pass
 
@@ -116,20 +124,58 @@ class sniffer():
         if sa[2] != PACKET_OUTGOING:
             return pkt
 
-    def recv_send_loop(self):
+    def run_bridge(self):
         pkt = ""
-        finish = False
-        while not finish:
+        while True:
             try:
                 pkt = self.receive()
             except error:
                 pass
-
             if pkt:
-                if self.intercept(pkt[ip_src:][:4], None) or self.intercept(pkt[ip_dst:][:4], pkt[port_dst:][:2]):
-                    self.redirect(pkt)
-                else:
+
+                # packets can be manipulated before sending, e.g. via Scapy
+                if mode == 0:
                     self.send(pkt)
 
-            if not self.control_queue.empty():
-                finish = True
+                # mode to impersonate client
+                if mode == 1:
+                    # traffic from server to client is diverted to mitm
+                    if self.source_is_server(pkt):
+                        self.intercept(pkt)
+                    # drop requests from original client to server
+                    elif self.destination_is_server(pkt) and \
+                            self.receive == self.socket_receive:
+                        pass
+                    else:
+                        self.send(pkt)
+
+                # mode to impersonate server and respond to client directly
+                if mode == 2:
+                    # traffic from client is diverted to mitm and sent back
+                    if self.destination_is_server(pkt) or\
+                            self.source_is_server(pkt):
+                        self.intercept(pkt)
+                    else:
+                        self.send(pkt)
+
+                # mode to manipulate traffic on the fly (transparent tcp proxy)
+                if mode == 3:
+                    # handle traffic coming from bridged interfaces
+                    if self.receive == self.socket_receive:
+                        # traffic from client and server is diverted to mitm
+                        if self.destination_is_server(pkt) or\
+                           self.destination_is_mitm(pkt):
+                            self.intercept(pkt)
+                        else:
+                            self.send(pkt)
+                    # handle traffic coming from mitm interface
+                    if self.receive == self.device_receive:
+                        # traffic from mitm interface to client is diverted
+                        # back to client
+                        if self.source_is_server(pkt):
+                            self.intercept(pkt)
+                        else:
+                            self.send(pkt)
+
+                if self.lock_check() == True:
+                    break
