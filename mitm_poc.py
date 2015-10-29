@@ -41,53 +41,50 @@ BUFFERSIZE_DEV = 65000  # read from tap device without bothering on MTU
 
 class MITMBridge():
 
-    def __init__(self, iface0, iface1, mitm_in):
+    def __init__(self, interface1, interface2, tun_device):
 
         # bridge traffic between ethernet interfaces and intercept to tun0
-        if mitm_in:
-            self.s_iface0 = socket(AF_PACKET, SOCK_RAW, htons(ETH_P_ALL))
-            self.s_iface0.bind((iface0, ETH_P_ALL))
+        if tun_device:
+            self.socket1 = socket(AF_PACKET, SOCK_RAW, htons(ETH_P_ALL))
+            self.socket1.bind((interface1, ETH_P_ALL))
 
-            self.s_iface1 = socket(AF_PACKET, SOCK_RAW)
-            self.s_iface1.bind((iface1, ETH_P_ALL))
+            self.socket2 = socket(AF_PACKET, SOCK_RAW)
+            self.socket2.bind((interface2, ETH_P_ALL))
 
             self.receive = self.socket_receive
-            self.send = lambda pkt: self.s_iface1.send(pkt)
+            self.send = lambda pkt: self.socket2.send(pkt)
             self.intercept = self.device_send
 
         # send traffic from tun device back to ethernet interfaces
         else:
-            self.s_iface0 = socket(AF_PACKET, SOCK_RAW)
-            self.s_iface0.bind((iface0, ETH_P_ALL))
+            self.socket1 = socket(AF_PACKET, SOCK_RAW)
+            self.socket1.bind((interface1, ETH_P_ALL))
 
-            self.s_iface1 = socket(AF_PACKET, SOCK_RAW)
-            self.s_iface1.bind((iface1, ETH_P_ALL))
+            self.socket2 = socket(AF_PACKET, SOCK_RAW)
+            self.socket2.bind((interface2, ETH_P_ALL))
 
             self.receive = self.device_receive
-            self.send = lambda pkt: self.s_iface1.send(pkt)
-            self.intercept = lambda pkt: self.s_iface0.send(pkt)
+            self.send = lambda pkt: self.socket2.send(pkt)
+            self.intercept = lambda pkt: self.socket1.send(pkt)
 
     def lock_check(self):
         return not still_running_lock.locked()
 
     # traffic is intercepted based on ip address and network port
-    def filter(self, ip, port, pkt_ip, pkt_port):
-        if inet_aton(ip) == pkt_ip:
-            if pkt_port:
-                if struct.pack(">H", int(port[:-1])) == pkt_port:
+    def filter(self, filter, pkt_ip, pkt_port):
+        for address in filter:
+            if address[0] == pkt_ip or address[0] == "\x00\x00\x00\x00":
+                if address[1] == pkt_port:
                     return True
-            else:
-                return True
         return False
 
     def source_is_server(self, pkt):
-        return self.filter(server_ip, server_port, pkt[SRC_IP_POS:SRC_IP_POS+4], pkt[SRC_PORT_POS:SRC_PORT_POS+2])
+        return self.filter(server_filter, pkt[SRC_IP_POS:SRC_IP_POS+4],
+                           pkt[SRC_PORT_POS:SRC_PORT_POS+2])
 
     def destination_is_server(self, pkt):
-        return self.filter(server_ip, server_port, pkt[DST_IP_POS:DST_IP_POS+4], pkt[DST_PORT_POS:DST_PORT_POS+2])
-
-    def destination_is_mitm(self, pkt):
-        return self.filter(client_ip, server_port, pkt[DST_IP_POS:DST_IP_POS+4], pkt[SRC_PORT_POS:SRC_PORT_POS+2])
+        return self.filter(server_filter, pkt[DST_IP_POS:DST_IP_POS+4],
+                           pkt[DST_PORT_POS:DST_PORT_POS+2])
 
     # traffic leaving mitm interface is written back to original addresses
     def device_receive(self):
@@ -104,7 +101,6 @@ class MITMBridge():
 
             # adjust packet if it is going to client
             if pkt_scapy[IP].dst == client_ip:
-                pkt_scapy[IP].src = server_ip
                 return str(Ether(dst=client_mac, src=server_mac) / pkt_scapy)
             # adjust packet to any other destination
             else:
@@ -125,7 +121,7 @@ class MITMBridge():
             pass
 
     def socket_receive(self):
-        pkt, sa = self.s_iface0.recvfrom(MTU)
+        pkt, sa = self.socket1.recvfrom(MTU)
         if sa[2] != PACKET_OUTGOING:
             return pkt
 
@@ -143,7 +139,7 @@ class MITMBridge():
                     self.send(pkt)
 
                 # mode to impersonate client
-                if mode == 1:
+                elif mode == 1:
                     # traffic from server to client is diverted to mitm
                     if self.source_is_server(pkt):
                         self.intercept(pkt)
@@ -155,7 +151,7 @@ class MITMBridge():
                         self.send(pkt)
 
                 # mode to impersonate server and respond to client directly
-                if mode == 2:
+                elif mode == 2:
                     # traffic from client is diverted to mitm and sent back
                     if self.destination_is_server(pkt) or\
                             self.source_is_server(pkt):
@@ -164,12 +160,12 @@ class MITMBridge():
                         self.send(pkt)
 
                 # mode to manipulate traffic on the fly (transparent tcp proxy)
-                if mode == 3:
+                elif mode == 3:
                     # handle traffic coming from bridged interfaces
                     if self.receive == self.socket_receive:
                         # traffic from client and server is diverted to mitm
                         if self.destination_is_server(pkt) or\
-                           self.destination_is_mitm(pkt):
+                           self.source_is_server(pkt):
                             self.intercept(pkt)
                         else:
                             self.send(pkt)
@@ -209,14 +205,15 @@ if __name__ == '__main__':
                         action='store',
                         help='config file to run different modes (interfaces' +
                         ' are bridged in each mode)\nsyntax of first line: ' +
-                        '<mode> <client mac> <client ip> <server/gateway ' +
-                        'mac> ' +
-                        '<server ip> <server port>\nmode 0: bridge mode (' +
-                        'client and server addresses are ignored)\n' +
-                        'mode 1: impersonate a client while connecting to ' +
-                        'a server\nmode 2: impersonate a server and wait' +
-                        'for client requests\nmode 3: manipulate traffic' +
-                        ' on the fly, i.e. as transparent tcp proxy\n')
+                        '<mode> <client mac> <client ' +
+                        'ip> <server/gateway mac>\n' +
+                        'mode=0: bridge mode (traffic is not intercepted)\n' +
+                        'mode=1: impersonate a client while connecting to ' +
+                        'a server\nmode=2: impersonate a server and wait ' +
+                        'for client requests\nmode=3: manipulate traffic ' +
+                        'on the fly, i.e. as transparent tcp proxy\n' +
+                        'syntax of other lines (each address is ' +
+                        'intercepted):\n<server ip> <server port>\n')
     parser.add_argument("-r", dest="rewrite", action='store_true',
                         help='rewrite mac address in case of ' +
                         'point-to-point protocols, e.g. if Wifi or 3G is ' +
@@ -232,12 +229,15 @@ if __name__ == '__main__':
     interface2 = args.interface2[0]
 
     # read config file if present (default is bridge mode)
+    server_filter = []
+    client_filter = []
     if args.file_name:
-        file = open(args.file_name[0]).readline()
-        mode = file.split(" ")[0]
-        if mode != "0":
-            client_mac, client_ip = file.split(" ")[1:3]
-            server_mac, server_ip, server_port = file.split(" ")[3:]
+        file = open(args.file_name[0]).readlines()
+        mode, client_mac, client_ip, server_mac = file[0].split(" ")
+        for line in file[1:]:
+            server_ip, server_port = line.split(" ")
+            server_filter.append([inet_aton(server_ip), struct.pack(">H",
+                                 int(server_port))])
     else:
         mode = "0"
     mode = int(mode)
@@ -257,7 +257,8 @@ if __name__ == '__main__':
         # facilitates transparent proxying for user-space applications
         os.system("iptables -t nat -F")
         os.system("iptables -t nat -A PREROUTING -i tun0 -p tcp -j REDIRECT")
-        os.system("iptables -t nat -A POSTROUTING -s 1.2.3.4 -j SNAT --to-source " + client_ip)
+        os.system("iptables -t nat -A POSTROUTING -s 1.2.3.4 " +
+                  "-j SNAT --to-source " + client_ip)
 
     # create file descriptor for tun device to read from and write to
     tun_device = os.open('/dev/net/tun', os.O_RDWR)
@@ -265,7 +266,6 @@ if __name__ == '__main__':
     ioctl(tun_device, TUNSETIFF, flags)
 
     # create three threads that receive, intercept and sent traffic
-
     bridge1 = MITMBridge(interface1, interface2, True)
     bridge2 = MITMBridge(interface2, interface1, True)
     bridge3 = MITMBridge(interface1, interface2, False)
