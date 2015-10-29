@@ -28,9 +28,9 @@ flags = struct.pack('16sH', "tap0", IFF_TAP | IFF_NO_IP)
 fcntl.ioctl(tap_device, TUNSETIFF, flags)
 
 
-class sniffer():
+class MITMBridge():
 
-    def __init__(self, iface0, iface1, mitm_in, mitm_out, mitm_config, control_queue):
+    def __init__(self, iface0, iface1, mitm_in):
 
         self.update_config(mitm_config)
 
@@ -59,6 +59,7 @@ class sniffer():
             self.send = lambda pkt: self.s_iface0.send(pkt)
             self.redirect = lambda pkt: self.s_iface1.send(pkt)
 
+    # TODO: atm this is not functioning
     # Call this function, to update the config
     def update_config(self, mitm_config):
         self.dst_ip = mitm_config.dst_ip

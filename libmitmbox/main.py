@@ -41,16 +41,13 @@ def mitmbox():
 
     init_tapDevices(bridge0_interface, bridge1_interface)
 
-    sniffer1 = sniffer(bridge0_interface, bridge1_interface,
-                       mitm_interface, 0, mitm_config, control_queue)
-    sniffer2 = sniffer(bridge1_interface, bridge0_interface,
-                       mitm_interface, 0, mitm_config, control_queue)
-    sniffer3 = sniffer(bridge0_interface, bridge1_interface, 0,
-                       mitm_interface, mitm_config, control_queue)
+    bridge1 = MITMBridge(bridge0_interface, bridge1_interface, True)
+    bridge2 = MITMBridge(bridge1_interface, bridge0_interface, True)
+    bridge3 = MITMBridge(bridge0_interface, bridge1_interface, False)
 
-    thread1 = Thread(target=sniffer1.recv_send_loop)
-    thread2 = Thread(target=sniffer2.recv_send_loop)
-    thread3 = Thread(target=sniffer3.recv_send_loop)
+    thread1 = Thread(target=bridge1.run_bridge)
+    thread2 = Thread(target=bridge2.run_bridge)
+    thread3 = Thread(target=bridge3.run_bridge)
 
     # still_running_lock.acquire()
 

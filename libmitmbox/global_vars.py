@@ -1,16 +1,23 @@
 from ConfigParser import *
 
 
-class Parse_MitmConfig():
+class bcolors:
+    HEADER = '\033[95m'
+    OKBLUE = '\033[94m'
+    OKGREEN = '\033[92m'
+    WARNING = '\033[93m'
+    FAIL = '\033[91m'
+    ENDC = '\033[0m'
+    BOLD = '\033[1m'
+    UNDERLINE = '\033[4m'
+
+
+class CONFIG():
 
     def __init__(self, configFile):
         self.config = ConfigParser()
         self.configFile = configFile
         self.trigger_parsing()
-
-    '''
-    trigger_parsing is a seperate function, to reread the configuration file if needed. This feature might be implemented in the future
-    '''
 
     def trigger_parsing(self):
 
