@@ -125,11 +125,11 @@ class MITMBridge():
             if pkt:
 
                 # packets can be manipulated before sending, e.g. via Scapy
-                if mode == MODE.BRIDGE:
+                if CONFIG.mode == MODE.BRIDGE:
                     self.send(pkt)
 
                 # mode to impersonate client
-                elif mode == MODE.IMPERSONATE_CLIENT:
+                elif CONFIG.mode == MODE.IMPERSONATE_CLIENT:
                     # traffic from server to client is diverted to mitm
                     if self.source_is_server(pkt):
                         self.intercept(pkt)
@@ -141,7 +141,7 @@ class MITMBridge():
                         self.send(pkt)
 
                 # mode to impersonate server and respond to client directly
-                elif mode == MODE.IMPERSONATE_SERVER:
+                elif CONFIG.mode == MODE.IMPERSONATE_SERVER:
                     # traffic from client is diverted to mitm and sent back
                     if self.destination_is_server(pkt) or\
                             self.source_is_server(pkt):
@@ -150,7 +150,7 @@ class MITMBridge():
                         self.send(pkt)
 
                 # mode to manipulate traffic on the fly (transparent tcp proxy)
-                elif mode == MODE.MANIPULATE:
+                elif CONFIG.mode == MODE.MANIPULATE:
                     # handle traffic coming from bridged interfaces
                     if self.receive == self.socket_receive:
                         # traffic from client and server is diverted to mitm
