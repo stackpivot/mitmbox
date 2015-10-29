@@ -2,7 +2,8 @@ from ConfigParser import *
 import Queue
 CONFIG_FILE = "/root/mitmbox/mitm.conf"
 
-CTRL_QUEUE = Queue()
+CTRL_QUEUE = ''
+QUIT = False
 
 class MODE:
     BRIDGE = 0

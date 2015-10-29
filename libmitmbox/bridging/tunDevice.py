@@ -1,12 +1,12 @@
 import os
-import struct
+from ..global_vars import CONFIG
 
 
-def init_tapDevices(bridge0_interface, bridge1_interface):
+def init_tunDevices():
 
     # os.system("ip link delete tap0")
-    os.system("ifconfig " + bridge0_interface + " promisc")
-    os.system("ifconfig " + bridge1_interface + " promisc")
+    os.system("ifconfig " + CONFIG.bridge0_interface + " promisc")
+    os.system("ifconfig " + CONFIG.bridge1_interface + " promisc")
     # add tun device and assign IP address
     os.system("ip tuntap add dev tun0 mode tun")
     os.system("ifconfig tun0 1.2.3.4")
@@ -17,4 +17,4 @@ def init_tapDevices(bridge0_interface, bridge1_interface):
     os.system("iptables -t nat -F")
     os.system("iptables -t nat -A PREROUTING -i tun0 -p tcp -j REDIRECT")
     os.system(
-        "iptables -t nat -A POSTROUTING -s 1.2.3.4 -j SNAT --to-source " + client_ip)
+        "iptables -t nat -A POSTROUTING -s 1.2.3.4 -j SNAT --to-source " + CONFIG.client_ip)

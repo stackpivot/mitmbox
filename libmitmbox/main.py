@@ -5,23 +5,16 @@ from ConfigParser import *
 from pdb import *
 from scapy.all import *
 from socket import *
-import Queue
 import time
 
 from .bridging.bridge import MITMBridge
 from .bridging.tunDevice import init_tunDevices
-from .global_vars import bcolors, CONFIG
+from .global_vars import bcolors, CONFIG, CONFIG_FILE, CTRL_QUEUE, QUIT
 
 
 thread1 = None
 thread2 = None
 thread3 = None
-
-still_running_lock = Lock()
-
-# currently this Queue is used to tell the Bridging Threads to quit.
-# int the future this feature could be used, to trigger a reread of the config
-control_queue = Queue.Queue()
 
 
 def mitmbox():
@@ -33,7 +26,7 @@ def mitmbox():
                         help='config file to intercept traffic', default='/root/mitmbox/mitm.conf')
 
     args = parser.parse_args()
-    CONFIG(args.config_file)
+    CONFIG_FILE = args.config_file[0]
 
     bridge0_interface = CONFIG.bridge0_interface
     bridge1_interface = CONFIG.bridge1_interface
@@ -47,8 +40,6 @@ def mitmbox():
     thread1 = Thread(target=bridge1.run_bridge)
     thread2 = Thread(target=bridge2.run_bridge)
     thread3 = Thread(target=bridge3.run_bridge)
-
-    # still_running_lock.acquire()
 
     thread1.start()
     thread2.start()
@@ -69,6 +60,7 @@ def mitmbox():
 
                 elif cmd in ['quit', 'exit', 'stop', 'leave']:
                     finish = True
+                    QUIT = True
 
                 elif cmd in ['rld', 'refresh', 'reload']:
                     print bcolors.WARNING + "reloading configuration file" + bcolors.ENDC
@@ -80,8 +72,7 @@ def mitmbox():
     except KeyboardInterrupt:
         # Ctrl+C detected, so let's finish the poison thread and exit
         finish = True
+        QUIT = True
     print bcolors.FAIL + "\n\nEXITING" + bcolors.ENDC + " ... cleaning up"
-    control_queue.put(('endThread1',))
-    control_queue.put(('endThread2',))
-    control_queue.put(('endThread3',))
+
     sys.exit(0)

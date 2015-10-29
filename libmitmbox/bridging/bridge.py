@@ -6,7 +6,7 @@ from pdb import *
 from scapy.all import *
 from socket import *
 import fcntl
-from ..global_vars import CONFIG, CTRL_QUEUE
+from ..global_vars import CONFIG, CTRL_QUEUE, MODE, QUIT
 
 MTU = 32676     # read from socket without bothering maximum transfer unit
 ETH_P_ALL = 0x03  # capture all bytes of packet including ethernet layer
@@ -168,5 +168,5 @@ class MITMBridge():
                         else:
                             self.send(pkt)
 
-                if self.lock_check() == True:
+                if QUIT == True:
                     break
