@@ -6,7 +6,7 @@ from pdb import *
 from scapy.all import *
 from socket import *
 import fcntl
-from ..common import bcolors
+from ..global_vars import CONFIG
 
 MTU = 32676     # read from socket without bothering maximum transfer unit
 ETH_P_ALL = 0x03  # capture all bytes of packet including ethernet layer
@@ -31,8 +31,6 @@ fcntl.ioctl(tap_device, TUNSETIFF, flags)
 class MITMBridge():
 
     def __init__(self, iface0, iface1, mitm_in):
-
-        self.update_config(mitm_config)
 
         self.control_queue = control_queue
         # traffic going from bridged interfaces to man-in-the-middle interface
@@ -59,13 +57,6 @@ class MITMBridge():
             self.send = lambda pkt: self.s_iface0.send(pkt)
             self.redirect = lambda pkt: self.s_iface1.send(pkt)
 
-    # TODO: atm this is not functioning
-    # Call this function, to update the config
-    def update_config(self, mitm_config):
-        self.dst_ip = mitm_config.dst_ip
-        self.dst_mac = mitm_config.dst_mac
-        self.dst_port = mitm_config.dst_port
-
     # traffic is intercepted based on ip address and network port
     def filter(self, ip, port, pkt_ip, pkt_port):
         if inet_aton(ip) == pkt_ip:
@@ -77,13 +68,13 @@ class MITMBridge():
         return False
 
     def source_is_server(self, pkt):
-        return self.filter(server_ip, server_port, pkt[SRC_IP_POS:SRC_IP_POS + 4], pkt[SRC_PORT_POS:SRC_PORT_POS + 2])
+        return self.filter(CONFIG.server_ip, Config.server_port, pkt[SRC_IP_POS:SRC_IP_POS + 4], pkt[SRC_PORT_POS:SRC_PORT_POS + 2])
 
     def destination_is_server(self, pkt):
-        return self.filter(server_ip, server_port, pkt[DST_IP_POS:DST_IP_POS + 4], pkt[DST_PORT_POS:DST_PORT_POS + 2])
+        return self.filter(CONFIG.server_ip, Config.server_port, pkt[DST_IP_POS:DST_IP_POS + 4], pkt[DST_PORT_POS:DST_PORT_POS + 2])
 
     def destination_is_mitm(self, pkt):
-        return self.filter(client_ip, server_port, pkt[DST_IP_POS:DST_IP_POS + 4], pkt[SRC_PORT_POS:SRC_PORT_POS + 2])
+        return self.filter(CONFIG.client_ip, Config.server_port, pkt[DST_IP_POS:DST_IP_POS + 4], pkt[SRC_PORT_POS:SRC_PORT_POS + 2])
 
     # traffic leaving mitm interface is written back to original addresses
     def device_receive(self):
@@ -99,13 +90,13 @@ class MITMBridge():
                 del pkt_scapy[TCP].chksum
 
             # adjust packet if it is going to client
-            if pkt_scapy[IP].dst == client_ip:
-                pkt_scapy[IP].src = server_ip
-                return str(Ether(dst=client_mac, src=server_mac) / pkt_scapy)
+            if pkt_scapy[IP].dst == CONFIG.client_ip:
+                pkt_scapy[IP].src = CONFIG.server_ip
+                return str(Ether(dst=CONFIG.client_mac, src=CONFIG.server_mac) / pkt_scapy)
             # adjust packet to any other destination
             else:
-                pkt_scapy[IP].src = client_ip
-                return str(Ether(dst=server_mac, src=client_mac) / pkt_scapy)
+                pkt_scapy[IP].src = CONFIG.client_ip
+                return str(Ether(dst=CONFIG.server_mac, src=CONFIG.client_mac) / pkt_scapy)
 
         except error:
             pass
