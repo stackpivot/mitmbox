@@ -24,13 +24,13 @@ class CONFIG():
         # TODO Check if file exists
         self.config.readfp(open(self.configFile))
 
-        self.dst_ip = self.config.get('Destination', 'ip')
-        self.dst_mac = self.config.get('Destination', 'mac')
-        self.dst_port = self.config.get('Destination', 'port')
+        self.server_ip = self.config.get('Destination', 'ip')
+        self.server_mac = self.config.get('Destination', 'mac')
+        self.server_port = self.config.get('Destination', 'port')
 
-        self.src_ip = self.config.get('Source', 'ip')
-        self.src_mac = self.config.get('Source', 'mac')
-        self.src_port = self.config.get('Source', 'port')
+        self.client_ip = self.config.get('Source', 'ip')
+        self.client_mac = self.config.get('Source', 'mac')
+        self.client_port = self.config.get('Source', 'port')
 
         self.bridge0_interface = self.config.get('Interfaces', 'bridge0')
         self.bridge1_interface = self.config.get('Interfaces', 'bridge1')
