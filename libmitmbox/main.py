@@ -8,10 +8,10 @@ from socket import *
 import Queue
 import time
 
-from .bridging.parse_config import Parse_MitmConfig
-from .bridging.bridge import sniffer
-from .bridging.tapDevice import init_tapDevices
-from .common import bcolors
+from .bridging.bridge import MITMBridge
+from .bridging.tunDevice import init_tunDevices
+from .global_vars import bcolors, CONFIG
+
 
 thread1 = None
 thread2 = None
@@ -33,13 +33,12 @@ def mitmbox():
                         help='config file to intercept traffic', default='/root/mitmbox/mitm.conf')
 
     args = parser.parse_args()
-    mitm_config = Parse_MitmConfig(args.config_file)
+    CONFIG(args.config_file)
 
-    bridge0_interface = mitm_config.bridge0_interface
-    bridge1_interface = mitm_config.bridge1_interface
-    mitm_interface = mitm_config.mitm_interface
+    bridge0_interface = CONFIG.bridge0_interface
+    bridge1_interface = CONFIG.bridge1_interface
 
-    init_tapDevices(bridge0_interface, bridge1_interface)
+    init_tunDevices()
 
     bridge1 = MITMBridge(bridge0_interface, bridge1_interface, True)
     bridge2 = MITMBridge(bridge1_interface, bridge0_interface, True)
@@ -74,9 +73,9 @@ def mitmbox():
                 elif cmd in ['rld', 'refresh', 'reload']:
                     print bcolors.WARNING + "reloading configuration file" + bcolors.ENDC
                     mitm_config.trigger_parsing()
-                    sniffer1.update_config(mitm_config)
-                    sniffer2.update_config(mitm_config)
-                    sniffer3.update_config(mitm_config)
+                    bridge1.update_config()
+                    bridge2.update_config()
+                    bridge3.update_config()
 
     except KeyboardInterrupt:
         # Ctrl+C detected, so let's finish the poison thread and exit
