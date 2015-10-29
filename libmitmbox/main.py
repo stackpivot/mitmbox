@@ -57,7 +57,8 @@ def mitmbox():
                 cmd = command[0].lower().strip()
                 if cmd in ['help', '?']:
                     print "rld: reload configuration file\n" + \
-                          "exit: stop mitmbox and exit"
+                          "exit: stop mitmbox and exit" + \
+                          "debug: pdb debugger"
 
                 elif cmd in ['quit', 'exit', 'stop', 'leave']:
                     finish = True
