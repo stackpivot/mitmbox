@@ -33,6 +33,17 @@ class Conf():
         # TODO Check if file exists
         self.config.readfp(open(self.configFile))
 
+        modeName = self.config.get('General', 'mode')
+        if modeName == 'BRIDGE':
+            self.mode = MODE.BRIDGE
+        elif modeName == 'IMPERSONATE_CLIENT':
+            self.mode = MODE.IMPERSONATE_CLIENT
+        elif modeName == 'IMPERSONATE_SERVER':
+            self.mode = MODE.IMPERSONATE_SERVER
+        elif modeName == 'MANIPULATE':
+            self.mode = MODE.MANIPULATE
+
+
         self.server_ip = self.config.get('Destination', 'ip')
         self.server_mac = self.config.get('Destination', 'mac')
         self.server_port = self.config.get('Destination', 'port')
