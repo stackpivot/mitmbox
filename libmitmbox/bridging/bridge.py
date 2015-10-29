@@ -6,7 +6,7 @@ from pdb import *
 from scapy.all import *
 from socket import *
 import fcntl
-from ..global_vars import CONFIG
+from ..global_vars import CONFIG, CTRL_QUEUE
 
 MTU = 32676     # read from socket without bothering maximum transfer unit
 ETH_P_ALL = 0x03  # capture all bytes of packet including ethernet layer
@@ -32,7 +32,6 @@ class MITMBridge():
 
     def __init__(self, iface0, iface1, mitm_in):
 
-        self.control_queue = control_queue
         # traffic going from bridged interfaces to man-in-the-middle interface
         if mitm_in:
             self.s_iface0 = socket(AF_PACKET, SOCK_RAW, htons(ETH_P_ALL))
@@ -46,7 +45,7 @@ class MITMBridge():
             self.redirect = self.device_send
 
         # traffic going from man-in-the-middle interface to bridged interfaces
-        if mitm_out:
+        else:
             self.s_iface0 = socket(AF_PACKET, SOCK_RAW)
             self.s_iface0.bind((iface0, ETH_P_ALL))
 
@@ -68,13 +67,13 @@ class MITMBridge():
         return False
 
     def source_is_server(self, pkt):
-        return self.filter(CONFIG.server_ip, Config.server_port, pkt[SRC_IP_POS:SRC_IP_POS + 4], pkt[SRC_PORT_POS:SRC_PORT_POS + 2])
+        return self.filter(CONFIG.server_ip, CONFIG.server_port, pkt[SRC_IP_POS:SRC_IP_POS + 4], pkt[SRC_PORT_POS:SRC_PORT_POS + 2])
 
     def destination_is_server(self, pkt):
-        return self.filter(CONFIG.server_ip, Config.server_port, pkt[DST_IP_POS:DST_IP_POS + 4], pkt[DST_PORT_POS:DST_PORT_POS + 2])
+        return self.filter(CONFIG.server_ip, CONFIG.server_port, pkt[DST_IP_POS:DST_IP_POS + 4], pkt[DST_PORT_POS:DST_PORT_POS + 2])
 
     def destination_is_mitm(self, pkt):
-        return self.filter(CONFIG.client_ip, Config.server_port, pkt[DST_IP_POS:DST_IP_POS + 4], pkt[SRC_PORT_POS:SRC_PORT_POS + 2])
+        return self.filter(CONFIG.client_ip, CONFIG.server_port, pkt[DST_IP_POS:DST_IP_POS + 4], pkt[SRC_PORT_POS:SRC_PORT_POS + 2])
 
     # traffic leaving mitm interface is written back to original addresses
     def device_receive(self):
@@ -126,11 +125,11 @@ class MITMBridge():
             if pkt:
 
                 # packets can be manipulated before sending, e.g. via Scapy
-                if mode == 0:
+                if mode == MODE.BRIDGE:
                     self.send(pkt)
 
                 # mode to impersonate client
-                if mode == 1:
+                if mode == MODE.IMPERSONATE_CLIENT:
                     # traffic from server to client is diverted to mitm
                     if self.source_is_server(pkt):
                         self.intercept(pkt)
@@ -142,7 +141,7 @@ class MITMBridge():
                         self.send(pkt)
 
                 # mode to impersonate server and respond to client directly
-                if mode == 2:
+                if mode == MODE.IMPERSONATE_SERVER:
                     # traffic from client is diverted to mitm and sent back
                     if self.destination_is_server(pkt) or\
                             self.source_is_server(pkt):
@@ -151,7 +150,7 @@ class MITMBridge():
                         self.send(pkt)
 
                 # mode to manipulate traffic on the fly (transparent tcp proxy)
-                if mode == 3:
+                if mode == MODE.MANIPULATE:
                     # handle traffic coming from bridged interfaces
                     if self.receive == self.socket_receive:
                         # traffic from client and server is diverted to mitm
