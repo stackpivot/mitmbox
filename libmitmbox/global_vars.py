@@ -27,9 +27,9 @@ class Conf():
     def __init__(self, configFile):
         self.config = ConfigParser()
         self.configFile = configFile
-        self.trigger_parsing()
+        self.update()
 
-    def trigger_parsing(self):
+    def update(self):
 
         # TODO Check if file exists
         self.config.readfp(open(self.configFile))

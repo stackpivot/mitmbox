@@ -33,7 +33,8 @@ class MITMBridge():
 
     def __init__(self, iface0, iface1, mitm_in):
 
-        # traffic going from bridged interfaces to man-in-the-middle interface
+
+        # bridge traffic between ethernet interfaces and intercept to tun0
         if mitm_in:
             self.s_iface0 = socket(AF_PACKET, SOCK_RAW, htons(ETH_P_ALL))
             self.s_iface0.bind((iface0, ETH_P_ALL))
@@ -43,9 +44,9 @@ class MITMBridge():
 
             self.receive = self.socket_receive
             self.send = lambda pkt: self.s_iface1.send(pkt)
-            self.redirect = self.device_send
+            self.intercept = self.device_send
 
-        # traffic going from man-in-the-middle interface to bridged interfaces
+        # send traffic from tun device back to ethernet interfaces
         else:
             self.s_iface0 = socket(AF_PACKET, SOCK_RAW)
             self.s_iface0.bind((iface0, ETH_P_ALL))
@@ -54,14 +55,14 @@ class MITMBridge():
             self.s_iface1.bind((iface1, ETH_P_ALL))
 
             self.receive = self.device_receive
-            self.send = lambda pkt: self.s_iface0.send(pkt)
-            self.redirect = lambda pkt: self.s_iface1.send(pkt)
+            self.send = lambda pkt: self.s_iface1.send(pkt)
+            self.intercept = lambda pkt: self.s_iface0.send(pkt)
 
     # traffic is intercepted based on ip address and network port
     def filter(self, ip, port, pkt_ip, pkt_port):
         if inet_aton(ip) == pkt_ip:
             if pkt_port:
-                if struct.pack(">H", int(port[:-1])) == pkt_port:
+                if struct.pack(">H", int(port)) == pkt_port:
                     return True
             else:
                 return True
@@ -144,6 +145,7 @@ class MITMBridge():
                 # mode to impersonate server and respond to client directly
                 elif CONFIG.mode == MODE.IMPERSONATE_SERVER:
                     # traffic from client is diverted to mitm and sent back
+
                     if self.destination_is_server(pkt) or\
                             self.source_is_server(pkt):
                         self.intercept(pkt)

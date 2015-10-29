@@ -6,6 +6,7 @@ from pdb import *
 from scapy.all import *
 from socket import *
 import time
+import pdb
 
 from .bridging.bridge import MITMBridge
 from .bridging.tunDevice import init_tunDevices
@@ -64,10 +65,9 @@ def mitmbox():
 
                 elif cmd in ['rld', 'refresh', 'reload']:
                     print bcolors.WARNING + "reloading configuration file" + bcolors.ENDC
-                    mitm_config.trigger_parsing()
-                    bridge1.update_config()
-                    bridge2.update_config()
-                    bridge3.update_config()
+                    CONFIG.update()
+                elif cmd in ['debug', 'dbg']:
+                    pdb.set_trace()
 
     except KeyboardInterrupt:
         # Ctrl+C detected, so let's finish the poison thread and exit
