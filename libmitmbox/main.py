@@ -75,4 +75,5 @@ def mitmbox():
         QUIT = True
     print bcolors.FAIL + "\n\nEXITING" + bcolors.ENDC + " ... cleaning up"
 
+    time.sleep(2)
     sys.exit(0)
