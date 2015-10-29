@@ -1,5 +1,14 @@
 from ConfigParser import *
+import Queue
+CONFIG_FILE = "/root/mitmbox/mitm.conf"
 
+CTRL_QUEUE = Queue()
+
+class MODE:
+    BRIDGE = 0
+    IMPERSONATE_CLIENT = 1
+    IMPERSONATE_SERVER = 2
+    MANIPULATE = 3
 
 class bcolors:
     HEADER = '\033[95m'
@@ -12,7 +21,7 @@ class bcolors:
     UNDERLINE = '\033[4m'
 
 
-class CONFIG():
+class Conf():
 
     def __init__(self, configFile):
         self.config = ConfigParser()
@@ -35,3 +44,6 @@ class CONFIG():
         self.bridge0_interface = self.config.get('Interfaces', 'bridge0')
         self.bridge1_interface = self.config.get('Interfaces', 'bridge1')
         self.mitm_interface = self.config.get('Interfaces', 'mitm')
+
+
+CONFIG = Conf(CONFIG_FILE)
