@@ -63,7 +63,6 @@ class Conf():
 
         self.bridge0_interface = self.config.get('Interfaces', 'bridge0')
         self.bridge1_interface = self.config.get('Interfaces', 'bridge1')
-        self.mitm_interface = self.config.get('Interfaces', 'mitm')
 
 
 CONFIG = Conf(CONFIG_FILE)
