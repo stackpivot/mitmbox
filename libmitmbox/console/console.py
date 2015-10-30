@@ -1,4 +1,4 @@
-from ..global_vars import LOGGING, LOG_QUEUE, CONFIG
+from ..global_vars import LOGGING, LOG_QUEUE, CONFIG, bcolors
 import time
 import pdb
 from scapy.all import *
@@ -9,6 +9,45 @@ DST_IP_POS = 0x1e       # position of ip destination address in packet
 SRC_PORT_POS = 0x22     # position of source port address in packet
 DST_PORT_POS = 0x24     # position of destination port address in packet
 
+# TCP FLAGS
+FIN = 0x01
+SYN = 0x02
+RST = 0x04
+PSH = 0x08
+ACK = 0x10
+URG = 0x20
+ECE = 0x40
+CWR = 0x80
+
+
+
+def formatOutput(sender, receiver, direction, flags, color):
+    out = ''
+    out += sender + ' '*(21 - len(sender))
+    out += ' ' + direction + ' '
+    out += receiver + ' '*(21 - len(receiver))
+
+    out += '   ' + flags
+    if color == 'WARNING':
+        return bcolors.WARNING + out + bcolors.ENDC
+    if 'SYN' in flags:
+        return bcolors.OKGREEN + out + bcolors.ENDC
+    return out
+
+def getFlags(pkt):
+
+    flagString = '  ('
+    F = pkt['TCP'].flags
+    if F & SYN:
+        flagString += 'SYN'
+        if F & ACK:
+            flagString += '/ACK'
+    elif F & ACK:
+        flagString += 'data'
+    elif F & FIN:
+        flagString += 'FIN'
+    return flagString + ')'
+
 
 def printLogs():
     while True:
@@ -16,34 +55,44 @@ def printLogs():
 
             logEntry = LOG_QUEUE.get()
 
-            direction = logEntry[0]
+            traf_direction = logEntry[0]
             pkt = logEntry[1]
 
             pkt_scapy = Ether(pkt)
 
             if pkt_scapy.getlayer("IP"):
-                ip_src = pkt_scapy[IP].src
-                ip_dst = pkt_scapy[IP].dst
+                ip_src = str(pkt_scapy[IP].src)
+                ip_dst = str(pkt_scapy[IP].dst)
 
                 if pkt_scapy.getlayer("TCP"):
-                    tcp_sport = pkt_scapy[TCP].sport
-                    tcp_dport = pkt_scapy[TCP].dport
+                    tcp_sport = str(pkt_scapy[TCP].sport)
+                    tcp_dport = str(pkt_scapy[TCP].dport)
 
-                    if ip_src == CONFIG.client_ip:
-                        if direction is 'c_to_s':
-                            print str(ip_src) + ":" + str(tcp_sport) + " --> " + str(ip_dst) + ":" + str(tcp_dport)
-                        elif direction is 's_to_c':
-                            print str(ip_dst) + ":" + str(tcp_dport) + " <-- " + str(ip_src) + ":" + str(tcp_sport)
-                    elif ip_dst == CONFIG.client_ip:
-                        if direction is 'c_to_s':
-                            print str(ip_src) + ":" + str(tcp_sport) + " --> " + str(ip_dst) + ":" + str(tcp_dport)
-                        elif direction is 's_to_c':
-                            print str(ip_dst) + ":" + str(tcp_dport) + " <-- " + str(ip_src) + ":" + str(tcp_sport)
+                    sender = ip_src + ':' + tcp_sport
+                    receiver = ip_dst + ':' + tcp_dport
+
+                    if ip_src == CONFIG.client_ip and traf_direction is 'c_to_s':
+                            direction = ' --> '
+                    elif ip_dst == CONFIG.client_ip and traf_direction is 's_to_c':
+                            direction = ' <-- '
+                            receiver = ip_src + ':' + tcp_sport
+                            sender = ip_dst + ':' + tcp_dport
+                    elif traf_direction is 'c_to_s':
+                        direction = ' --> '
+                    elif traf_direction is 'to_m':
+                        direction = ' ^^^ '
+                    elif traf_direction is 'm_to_c':
+                        direction = ' <--v '
+                    elif traf_direction is 'm_to_s':
+                        direction = ' v--> '
                     else:
-                        if direction is 'c_to_s':
-                            print str(ip_src) + ":" + str(tcp_sport) + " --> " + str(ip_dst) + ":" + str(tcp_dport)
-                        elif direction is 's_to_c':
-                            print str(ip_dst) + ":" + str(tcp_dport) + " <-- " + str(ip_src) + ":" + str(tcp_sport)
+                        direction = ' <-- '
+
+                    color = None
+                    if 'm' in traf_direction:
+                        color = 'WARNING'
+                    print formatOutput(sender, receiver, direction, getFlags(pkt_scapy), color)
+
 
         except KeyboardInterrupt:
             return -1

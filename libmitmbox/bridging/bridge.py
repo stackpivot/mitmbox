@@ -92,11 +92,16 @@ class MITMBridge():
 
             # adjust packet if it is going to client
             if pkt_scapy[IP].dst == CONFIG.client_ip:
+                if LOGGING is True:
+                    LOG_QUEUE.put(['m_to_c', p])
                 return str(Ether(dst=CONFIG.client_mac, src=CONFIG.server_mac) / pkt_scapy)
             # adjust packet to any other destination
             else:
                 pkt_scapy[IP].src = CONFIG.client_ip
+                if LOGGING is True:
+                    LOG_QUEUE.put(['m_to_s', p])
                 return str(Ether(dst=CONFIG.server_mac, src=CONFIG.client_mac) / pkt_scapy)
+
 
         except error:
             pass
@@ -108,6 +113,7 @@ class MITMBridge():
             del pkt_scapy[IP].chksum
             del pkt_scapy[TCP].chksum
             os.write(tun_device, str(pkt_scapy))
+            LOG_QUEUE.put(['to_m', pkt])
         except error:
             pass
 
@@ -124,9 +130,9 @@ class MITMBridge():
             except error:
                 pass
             if pkt:
+
                 if LOGGING is True:
                     if self.socket_client is CONFIG.bridge0_interface and self.tun_device is True:
-
                         LOG_QUEUE.put(['c_to_s', pkt])
                     elif self.socket_client is CONFIG.bridge1_interface and self.tun_device is True:
                         LOG_QUEUE.put(['s_to_c', pkt])
