@@ -60,9 +60,11 @@ class MITMBridge():
 
     # traffic is intercepted based on ip address and network port
     def filterTraffic(self, server_ip_list, pkt_ip, pkt_port):
-        for address in server_ip_list:
-            if address[0] == pkt_ip or address[0] == "\x00\x00\x00\x00":
-                if address[1] == pkt_port:
+        for ip_port_tuple in server_ip_list:
+            if ip_port_tuple[0] == pkt_ip or ip_port_tuple[0] == "\x00\x00\x00\x00":
+                if ip_port_tuple[1] == pkt_port:
+                    return True
+                elif ip_port_tuple[1] == 0
                     return True
         return False
 
