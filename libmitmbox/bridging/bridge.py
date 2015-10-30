@@ -6,7 +6,7 @@ from pdb import *
 from scapy.all import *
 from socket import *
 import fcntl
-from ..global_vars import CONFIG, CTRL_QUEUE, MODE, QUIT
+from ..global_vars import CONFIG, MODE, QUIT
 
 MTU = 32676             # read from socket without bothering on MTU
 ETH_P_ALL = 0x03        # capture all bytes of packet including ethernet layer
@@ -31,34 +31,35 @@ ioctl(tun_device, TUNSETIFF, flags)
 
 class MITMBridge():
 
-    def __init__(self, iface0, iface1, tun_device):
+    def __init__(self, socket_client, socket_server, tun_device):
 
         # bridge traffic between ethernet interfaces and intercept to tun0
         if tun_device:
-            self.s_iface0 = socket(AF_PACKET, SOCK_RAW, htons(ETH_P_ALL))
-            self.s_iface0.bind((iface0, ETH_P_ALL))
+            self.s_socket_client = socket(
+                AF_PACKET, SOCK_RAW, htons(ETH_P_ALL))
+            self.s_socket_client.bind((socket_client, ETH_P_ALL))
 
-            self.s_iface1 = socket(AF_PACKET, SOCK_RAW)
-            self.s_iface1.bind((iface1, ETH_P_ALL))
+            self.s_socket_server = socket(AF_PACKET, SOCK_RAW)
+            self.s_socket_server.bind((socket_server, ETH_P_ALL))
 
             self.receive = self.socket_receive
-            self.send = lambda pkt: self.s_iface1.send(pkt)
+            self.send = lambda pkt: self.s_socket_server.send(pkt)
             self.intercept = self.device_send
 
         # send traffic from tun device back to ethernet interfaces
         else:
-            self.s_iface0 = socket(AF_PACKET, SOCK_RAW)
-            self.s_iface0.bind((iface0, ETH_P_ALL))
+            self.s_socket_client = socket(AF_PACKET, SOCK_RAW)
+            self.s_socket_client.bind((socket_client, ETH_P_ALL))
 
-            self.s_iface1 = socket(AF_PACKET, SOCK_RAW)
-            self.s_iface1.bind((iface1, ETH_P_ALL))
+            self.s_socket_server = socket(AF_PACKET, SOCK_RAW)
+            self.s_socket_server.bind((socket_server, ETH_P_ALL))
 
             self.receive = self.device_receive
-            self.send = lambda pkt: self.s_iface1.send(pkt)
-            self.intercept = lambda pkt: self.s_iface0.send(pkt)
+            self.send = lambda pkt: self.s_socket_server.send(pkt)
+            self.intercept = lambda pkt: self.s_socket_client.send(pkt)
 
     # traffic is intercepted based on ip address and network port
-    def filterTraffic(self, filter, pkt_ip, pkt_port):
+    def filterTraffic(self, server_ip_list, pkt_ip, pkt_port):
         for address in filter:
             if address[0] == pkt_ip or address[0] == "\x00\x00\x00\x00":
                 if address[1] == pkt_port:
@@ -66,13 +67,10 @@ class MITMBridge():
         return False
 
     def source_is_server(self, pkt):
-        return self.filterTraffic(CONFIG.server_ip, CONFIG.server_port, pkt[SRC_IP_POS:SRC_IP_POS + 4], pkt[SRC_PORT_POS:SRC_PORT_POS + 2])
+        return self.filterTraffic(CONFIG.server_ip_port_list, pkt[SRC_IP_POS:SRC_IP_POS + 4], pkt[SRC_PORT_POS:SRC_PORT_POS + 2])
 
     def destination_is_server(self, pkt):
-        return self.filterTraffic(CONFIG.server_ip, CONFIG.server_port, pkt[DST_IP_POS:DST_IP_POS + 4], pkt[DST_PORT_POS:DST_PORT_POS + 2])
-
-    def destination_is_mitm(self, pkt):
-        return self.filterTraffic(CONFIG.client_ip, CONFIG.server_port, pkt[DST_IP_POS:DST_IP_POS + 4], pkt[SRC_PORT_POS:SRC_PORT_POS + 2])
+        return self.filterTraffic(CONFIG.server_ip_port_list, pkt[DST_IP_POS:DST_IP_POS + 4], pkt[DST_PORT_POS:DST_PORT_POS + 2])
 
     # traffic leaving mitm interface is written back to original addresses
     def device_receive(self):
@@ -110,7 +108,7 @@ class MITMBridge():
             pass
 
     def socket_receive(self):
-        pkt, sa = self.s_iface0.recvfrom(MTU)
+        pkt, sa = self.s_socket_client.recvfrom(MTU)
         if sa[2] != PACKET_OUTGOING:
             return pkt
 
@@ -155,7 +153,7 @@ class MITMBridge():
                     if self.receive == self.socket_receive:
                         # traffic from client and server is diverted to mitm
                         if self.destination_is_server(pkt) or\
-                           self.destination_is_mitm(pkt):
+                           self.source_is_server(pkt):
                             self.intercept(pkt)
                         else:
                             self.send(pkt)
@@ -168,5 +166,5 @@ class MITMBridge():
                         else:
                             self.send(pkt)
 
-                if QUIT == True:
+                if QUIT is True:
                     break
