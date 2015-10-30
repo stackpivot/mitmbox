@@ -96,7 +96,12 @@ def printLogs(logall):
                     elif traf_direction is 'c_to_s':
                         direction = ' --> '
                     elif traf_direction is 'to_m':
-                        direction = ' ^^^ '
+
+                        if ip_src == CONFIG.client_ip:
+                            direction = ' >^^ '
+                        else:
+                            direction = ' ^^< '
+
                     elif traf_direction is 'm_to_c':
                         direction = ' <vv '
                         receiver = ip_src + ':' + tcp_sport

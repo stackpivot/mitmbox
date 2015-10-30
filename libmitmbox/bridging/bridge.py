@@ -124,7 +124,9 @@ class MITMBridge():
             del pkt_scapy[IP].chksum
             del pkt_scapy[TCP].chksum
             os.write(tun_device, str(pkt_scapy))
-            LOG_QUEUE.put(['to_m', pkt])
+
+            if LOGGING is True:
+                LOG_QUEUE.put(['to_m', pkt])
         except error:
             pass
 
@@ -142,12 +144,6 @@ class MITMBridge():
                 pass
             if pkt:
 
-                if LOGGING is True:
-                    if self.socket_client is CONFIG.bridge0_interface and self.tun_device is True:
-                        LOG_QUEUE.put(['c_to_s', pkt])
-                    elif self.socket_client is CONFIG.bridge1_interface and self.tun_device is True:
-                        LOG_QUEUE.put(['s_to_c', pkt])
-
                 # packets can be manipulated before sending, e.g. via Scapy
                 if CONFIG.mode == MODE.BRIDGE:
                     self.send(pkt)
@@ -160,7 +156,7 @@ class MITMBridge():
                     # drop requests from original client to server
                     elif self.destination_is_server(pkt) and \
                             self.receive == self.socket_receive:
-                        pass
+                        continue
                     else:
                         self.send(pkt)
 
@@ -192,6 +188,12 @@ class MITMBridge():
                             self.intercept(pkt)
                         else:
                             self.send(pkt)
+
+                if LOGGING is True:
+                    if self.socket_client is CONFIG.bridge0_interface and self.tun_device is True:
+                        LOG_QUEUE.put(['c_to_s', pkt])
+                    elif self.socket_client is CONFIG.bridge1_interface and self.tun_device is True:
+                        LOG_QUEUE.put(['s_to_c', pkt])
 
                 if QUIT is True:
                     break
