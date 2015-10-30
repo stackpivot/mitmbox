@@ -87,7 +87,6 @@ class MITMBridge():
 
             # adjust packet if it is going to client
             if pkt_scapy[IP].dst == CONFIG.client_ip:
-                pkt_scapy[IP].src = CONFIG.server_ip
                 return str(Ether(dst=CONFIG.client_mac, src=CONFIG.server_mac) / pkt_scapy)
             # adjust packet to any other destination
             else:
