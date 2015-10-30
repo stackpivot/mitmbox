@@ -16,5 +16,4 @@ def init_tunDevices():
     # facilitates transparent proxying for user-space applications
     os.system("iptables -t nat -F")
     os.system("iptables -t nat -A PREROUTING -i tun0 -p tcp -j REDIRECT")
-    os.system(
-        "iptables -t nat -A POSTROUTING -s 1.2.3.4 -j SNAT --to-source " + CONFIG.client_ip)
+    os.system("iptables -t nat -A POSTROUTING -s 1.2.3.4 -j SNAT --to-source " + CONFIG.client_ip)
