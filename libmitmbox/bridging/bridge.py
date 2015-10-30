@@ -141,7 +141,7 @@ class MITMBridge():
                 elif CONFIG.mode == MODE.IMPERSONATE_SERVER:
                     # traffic from client is diverted to mitm and sent back
 
-                    if self.destination_is_server(pkt) or\
+                    if self.destination_is_server(pkt) or \
                             self.source_is_server(pkt):
                         self.intercept(pkt)
                     else:
@@ -152,7 +152,7 @@ class MITMBridge():
                     # handle traffic coming from bridged interfaces
                     if self.receive == self.socket_receive:
                         # traffic from client and server is diverted to mitm
-                        if self.destination_is_server(pkt) or\
+                        if self.destination_is_server(pkt) or \
                            self.source_is_server(pkt):
                             self.intercept(pkt)
                         else:
