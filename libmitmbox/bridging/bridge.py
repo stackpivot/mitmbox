@@ -6,7 +6,7 @@ from pdb import *
 from scapy.all import *
 from socket import *
 import fcntl
-from ..global_vars import CONFIG, MODE, QUIT
+from ..global_vars import CONFIG, MODE, QUIT, LOG_QUEUE, LOGGING
 
 MTU = 32676             # read from socket without bothering on MTU
 ETH_P_ALL = 0x03        # capture all bytes of packet including ethernet layer
@@ -33,6 +33,8 @@ class MITMBridge():
 
     def __init__(self, socket_client, socket_server, tun_device):
 
+        self.tun_device = tun_device
+        self.socket_client = socket_client
         # bridge traffic between ethernet interfaces and intercept to tun0
         if tun_device:
             self.s_socket_client = socket(
@@ -90,10 +92,26 @@ class MITMBridge():
 
             # adjust packet if it is going to client
             if pkt_scapy[IP].dst == CONFIG.client_ip:
+
+                if LOGGING is True:
+                    if pkt_scapy.getlayer("IP"):
+                        if pkt_scapy.getlayer("TCP"):
+                            pkt = str(Ether(
+                                dst=CONFIG.client_mac, src=CONFIG.server_mac) / pkt_scapy)
+                            LOG_QUEUE.put(['m_to_c', pkt])
+
                 return str(Ether(dst=CONFIG.client_mac, src=CONFIG.server_mac) / pkt_scapy)
             # adjust packet to any other destination
             else:
                 pkt_scapy[IP].src = CONFIG.client_ip
+
+                if LOGGING is True:
+                    if pkt_scapy.getlayer("IP"):
+                        if pkt_scapy.getlayer("TCP"):
+                            pkt = str(Ether(
+                                dst=CONFIG.server_mac, src=CONFIG.client_mac) / pkt_scapy)
+                            LOG_QUEUE.put(['m_to_s', pkt])
+
                 return str(Ether(dst=CONFIG.server_mac, src=CONFIG.client_mac) / pkt_scapy)
 
         except error:
@@ -106,6 +124,9 @@ class MITMBridge():
             del pkt_scapy[IP].chksum
             del pkt_scapy[TCP].chksum
             os.write(tun_device, str(pkt_scapy))
+
+            if LOGGING is True:
+                LOG_QUEUE.put(['to_m', pkt])
         except error:
             pass
 
@@ -135,7 +156,7 @@ class MITMBridge():
                     # drop requests from original client to server
                     elif self.destination_is_server(pkt) and \
                             self.receive == self.socket_receive:
-                        pass
+                        continue
                     else:
                         self.send(pkt)
 
@@ -167,6 +188,12 @@ class MITMBridge():
                             self.intercept(pkt)
                         else:
                             self.send(pkt)
+
+                if LOGGING is True:
+                    if self.socket_client is CONFIG.bridge0_interface and self.tun_device is True:
+                        LOG_QUEUE.put(['c_to_s', pkt])
+                    elif self.socket_client is CONFIG.bridge1_interface and self.tun_device is True:
+                        LOG_QUEUE.put(['s_to_c', pkt])
 
                 if QUIT is True:
                     break

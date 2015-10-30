@@ -7,6 +7,9 @@ CONFIG_FILE = "/root/mitmbox/mitm.conf"
 CTRL_QUEUE = ''
 QUIT = False
 
+LOGGING = True
+LOG_QUEUE = Queue.Queue()
+
 
 class MODE:
     BRIDGE = 0
