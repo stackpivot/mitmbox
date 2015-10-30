@@ -5,13 +5,12 @@ from ConfigParser import *
 from pdb import *
 from scapy.all import *
 from socket import *
-import time
-import pdb
+
 
 from .bridging.bridge import MITMBridge
 from .bridging.tunDevice import init_tunDevices
 from .global_vars import bcolors, CONFIG, CONFIG_FILE, CTRL_QUEUE, QUIT
-
+from .console.console import consoleOutput
 
 thread1 = None
 thread2 = None
@@ -28,7 +27,6 @@ def mitmbox():
 
     args = parser.parse_args()
     CONFIG_FILE = args.config_file[0]
-
     bridge0_interface = CONFIG.bridge0_interface
     bridge1_interface = CONFIG.bridge1_interface
 
@@ -46,35 +44,4 @@ def mitmbox():
     thread2.start()
     thread3.start()
 
-    finish = False
-    os.system('clear')
-    try:
-        while not finish:
-            time.sleep(1)  # delay is a quick hack to kind of sync output
-
-            command = raw_input('mitmbox> ').split()
-            if command:
-                cmd = command[0].lower().strip()
-                if cmd in ['help', '?']:
-                    print "rld: reload configuration file\n" + \
-                          "exit: stop mitmbox and exit" + \
-                          "debug: pdb debugger"
-
-                elif cmd in ['quit', 'exit', 'stop', 'leave']:
-                    finish = True
-                    QUIT = True
-
-                elif cmd in ['rld', 'refresh', 'reload']:
-                    print bcolors.WARNING + "reloading configuration file" + bcolors.ENDC
-                    CONFIG.update()
-                elif cmd in ['debug', 'dbg']:
-                    pdb.set_trace()
-
-    except KeyboardInterrupt:
-        # Ctrl+C detected, so let's finish the poison thread and exit
-        finish = True
-        QUIT = True
-    print bcolors.FAIL + "\n\nEXITING" + bcolors.ENDC + " ... cleaning up"
-
-    time.sleep(2)
-    sys.exit(0)
+    consoleOutput()

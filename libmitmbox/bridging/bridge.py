@@ -6,7 +6,7 @@ from pdb import *
 from scapy.all import *
 from socket import *
 import fcntl
-from ..global_vars import CONFIG, MODE, QUIT
+from ..global_vars import CONFIG, MODE, QUIT, LOG_QUEUE, LOGGING
 
 MTU = 32676             # read from socket without bothering on MTU
 ETH_P_ALL = 0x03        # capture all bytes of packet including ethernet layer
@@ -33,6 +33,8 @@ class MITMBridge():
 
     def __init__(self, socket_client, socket_server, tun_device):
 
+        self.tun_device = tun_device
+        self.socket_client = socket_client
         # bridge traffic between ethernet interfaces and intercept to tun0
         if tun_device:
             self.s_socket_client = socket(
@@ -122,6 +124,12 @@ class MITMBridge():
             except error:
                 pass
             if pkt:
+                if LOGGING is True:
+                    if self.socket_client is CONFIG.bridge0_interface and self.tun_device is True:
+
+                        LOG_QUEUE.put(['c_to_s', pkt])
+                    elif self.socket_client is CONFIG.bridge1_interface and self.tun_device is True:
+                        LOG_QUEUE.put(['s_to_c', pkt])
 
                 # packets can be manipulated before sending, e.g. via Scapy
                 if CONFIG.mode == MODE.BRIDGE:
