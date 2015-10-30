@@ -2,7 +2,11 @@ from ..global_vars import LOGGING, LOG_QUEUE, CONFIG, bcolors
 import time
 import pdb
 from scapy.all import *
-
+import pydoc
+import os
+import sys
+import subprocess
+import tempfile
 
 SRC_IP_POS = 0x1a       # position of ip source address in packet
 DST_IP_POS = 0x1e       # position of ip destination address in packet
@@ -115,7 +119,7 @@ def printLogs(logall):
                     if 'm' in traf_direction:
                         color = 'WARNING'
                     if (logall is False and 'm' in traf_direction) or logall is True:
-                        print formatOutput(sender, receiver, direction, getFlags(pkt_scapy), color)
+                            print formatOutput(sender, receiver, direction, getFlags(pkt_scapy), color)
 
         except KeyboardInterrupt:
             return -1
@@ -148,7 +152,9 @@ def consoleOutput():
                 elif cmd in ['debug', 'dbg']:
                     pdb.set_trace()
                 elif cmd in ['log']:
+
                     printLogs(True)
+
                 elif cmd in ['logmitm']:
                     printLogs(False)
 
