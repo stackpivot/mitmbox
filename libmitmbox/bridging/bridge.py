@@ -31,11 +31,10 @@ ioctl(tun_device, TUNSETIFF, flags)
 
 class MITMBridge():
 
-    def __init__(self, iface0, iface1, mitm_in):
-
+    def __init__(self, iface0, iface1, tun_device):
 
         # bridge traffic between ethernet interfaces and intercept to tun0
-        if mitm_in:
+        if tun_device:
             self.s_iface0 = socket(AF_PACKET, SOCK_RAW, htons(ETH_P_ALL))
             self.s_iface0.bind((iface0, ETH_P_ALL))
 
@@ -59,23 +58,21 @@ class MITMBridge():
             self.intercept = lambda pkt: self.s_iface0.send(pkt)
 
     # traffic is intercepted based on ip address and network port
-    def filter(self, ip, port, pkt_ip, pkt_port):
-        if inet_aton(ip) == pkt_ip:
-            if pkt_port:
-                if struct.pack(">H", int(port)) == pkt_port:
+    def filterTraffic(self, filter, pkt_ip, pkt_port):
+        for address in filter:
+            if address[0] == pkt_ip or address[0] == "\x00\x00\x00\x00":
+                if address[1] == pkt_port:
                     return True
-            else:
-                return True
         return False
 
     def source_is_server(self, pkt):
-        return self.filter(CONFIG.server_ip, CONFIG.server_port, pkt[SRC_IP_POS:SRC_IP_POS + 4], pkt[SRC_PORT_POS:SRC_PORT_POS + 2])
+        return self.filterTraffic(CONFIG.server_ip, CONFIG.server_port, pkt[SRC_IP_POS:SRC_IP_POS + 4], pkt[SRC_PORT_POS:SRC_PORT_POS + 2])
 
     def destination_is_server(self, pkt):
-        return self.filter(CONFIG.server_ip, CONFIG.server_port, pkt[DST_IP_POS:DST_IP_POS + 4], pkt[DST_PORT_POS:DST_PORT_POS + 2])
+        return self.filterTraffic(CONFIG.server_ip, CONFIG.server_port, pkt[DST_IP_POS:DST_IP_POS + 4], pkt[DST_PORT_POS:DST_PORT_POS + 2])
 
     def destination_is_mitm(self, pkt):
-        return self.filter(CONFIG.client_ip, CONFIG.server_port, pkt[DST_IP_POS:DST_IP_POS + 4], pkt[SRC_PORT_POS:SRC_PORT_POS + 2])
+        return self.filterTraffic(CONFIG.client_ip, CONFIG.server_port, pkt[DST_IP_POS:DST_IP_POS + 4], pkt[SRC_PORT_POS:SRC_PORT_POS + 2])
 
     # traffic leaving mitm interface is written back to original addresses
     def device_receive(self):
