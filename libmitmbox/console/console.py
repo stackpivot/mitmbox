@@ -20,19 +20,30 @@ ECE = 0x40
 CWR = 0x80
 
 
+known_ports = {20: 'FTP',
+               22: 'SSH',
+               25: 'SMTP',
+               80: 'HTTP',
+               443: 'HTTPS',
+               8080: 'HTTP',
+               8443: 'HTTPS',
+               }
+
 
 def formatOutput(sender, receiver, direction, flags, color):
     out = ''
-    out += sender + ' '*(21 - len(sender))
+    out += sender + ' ' * (21 - len(sender))
     out += ' ' + direction + ' '
-    out += receiver + ' '*(21 - len(receiver))
+    out += receiver + ' ' * (21 - len(receiver))
 
     out += '   ' + flags
+    out += '  ' + known_ports[int(receiver.split(':')[1])]
     if color == 'WARNING':
         return bcolors.WARNING + out + bcolors.ENDC
     if 'SYN' in flags:
         return bcolors.OKGREEN + out + bcolors.ENDC
     return out
+
 
 def getFlags(pkt):
 
@@ -72,11 +83,11 @@ def printLogs():
                     receiver = ip_dst + ':' + tcp_dport
                     print traf_direction
                     if ip_src == CONFIG.client_ip and traf_direction is 'c_to_s':
-                            direction = ' --> '
+                        direction = ' --> '
                     elif ip_dst == CONFIG.client_ip and traf_direction is 's_to_c':
-                            direction = ' <-- '
-                            receiver = ip_src + ':' + tcp_sport
-                            sender = ip_dst + ':' + tcp_dport
+                        direction = ' <-- '
+                        receiver = ip_src + ':' + tcp_sport
+                        sender = ip_dst + ':' + tcp_dport
                     elif traf_direction is 'c_to_s':
                         direction = ' --> '
                     elif traf_direction is 'to_m':
@@ -92,7 +103,6 @@ def printLogs():
                     if 'm' in traf_direction:
                         color = 'WARNING'
                     print formatOutput(sender, receiver, direction, getFlags(pkt_scapy), color)
-
 
         except KeyboardInterrupt:
             return -1

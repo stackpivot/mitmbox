@@ -107,7 +107,6 @@ class MITMBridge():
                             LOG_QUEUE.put(['m_to_s', str(pkt_scapy)])
                 return str(Ether(dst=CONFIG.server_mac, src=CONFIG.client_mac) / pkt_scapy)
 
-
         except error:
             pass
 
