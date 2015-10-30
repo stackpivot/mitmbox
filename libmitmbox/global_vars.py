@@ -1,5 +1,7 @@
 from ConfigParser import *
 import Queue
+from socket import inet_aton
+import struct
 CONFIG_FILE = "/root/mitmbox/mitm.conf"
 
 CTRL_QUEUE = ''
@@ -46,7 +48,7 @@ class Conf():
         elif modeName == 'MANIPULATE':
             self.mode = MODE.MANIPULATE
 
-        ips_ports = self.config.get('Destination', 'ip:port')
+        ips_ports = self.config.get('Destination', 'ip_port')
 
         self.server_ip_port_list = []
         for ip_port_tuple in ips_ports.split(','):
@@ -54,7 +56,6 @@ class Conf():
             self.server_ip_port_list.append([inet_aton(server_ip.strip()), struct.pack(">H",
                                                                                        int(server_port.strip()))])
         self.server_mac = self.config.get('Destination', 'mac')
-        self.server_port = self.config.get('Destination', 'port')
 
         self.client_ip = self.config.get('Source', 'ip')
         self.client_mac = self.config.get('Source', 'mac')
