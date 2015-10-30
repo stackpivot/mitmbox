@@ -5,11 +5,13 @@ CONFIG_FILE = "/root/mitmbox/mitm.conf"
 CTRL_QUEUE = ''
 QUIT = False
 
+
 class MODE:
     BRIDGE = 0
     IMPERSONATE_CLIENT = 1
     IMPERSONATE_SERVER = 2
     MANIPULATE = 3
+
 
 class bcolors:
     HEADER = '\033[95m'
@@ -44,8 +46,13 @@ class Conf():
         elif modeName == 'MANIPULATE':
             self.mode = MODE.MANIPULATE
 
+        ips_ports = self.config.get('Destination', 'ip:port')
 
-        self.server_ip = self.config.get('Destination', 'ip')
+        self.server_ip_port_list = []
+        for ip_port_tuple in ips_ports.split(','):
+            server_ip, server_port = ip_port_tuple.split(":")
+            self.server_ip_port_list.append([inet_aton(server_ip.strip()), struct.pack(">H",
+                                                                                       int(server_port.strip()))])
         self.server_mac = self.config.get('Destination', 'mac')
         self.server_port = self.config.get('Destination', 'port')
 
