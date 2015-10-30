@@ -37,11 +37,14 @@ def formatOutput(sender, receiver, direction, flags, color):
     out += receiver + ' ' * (21 - len(receiver))
 
     out += '   ' + flags
-    out += '  ' + known_ports[int(receiver.split(':')[1])]
+    #out += '  ' + known_ports[int(receiver.split(':')[1])]
     if color == 'WARNING':
         return bcolors.WARNING + out + bcolors.ENDC
+    if 'RST' in flags:
+        return bcolors.FAIL + out + bcolors.ENDC
     if 'SYN' in flags:
         return bcolors.OKGREEN + out + bcolors.ENDC
+
     return out
 
 
@@ -57,16 +60,19 @@ def getFlags(pkt):
         flagString += 'data'
     elif F & FIN:
         flagString += 'FIN'
+    elif F & RST:
+        flagString += 'RST'
     return flagString + ')'
 
 
-def printLogs():
+def printLogs(logall):
     while True:
         try:
 
             logEntry = LOG_QUEUE.get()
 
             traf_direction = logEntry[0]
+
             pkt = logEntry[1]
 
             pkt_scapy = Ether(pkt)
@@ -81,7 +87,6 @@ def printLogs():
 
                     sender = ip_src + ':' + tcp_sport
                     receiver = ip_dst + ':' + tcp_dport
-                    print traf_direction
                     if ip_src == CONFIG.client_ip and traf_direction is 'c_to_s':
                         direction = ' --> '
                     elif ip_dst == CONFIG.client_ip and traf_direction is 's_to_c':
@@ -93,16 +98,19 @@ def printLogs():
                     elif traf_direction is 'to_m':
                         direction = ' ^^^ '
                     elif traf_direction is 'm_to_c':
-                        direction = ' <--v '
+                        direction = ' <vv '
+                        receiver = ip_src + ':' + tcp_sport
+                        sender = ip_dst + ':' + tcp_dport
                     elif traf_direction is 'm_to_s':
-                        direction = ' v--> '
+                        direction = ' vv> '
                     else:
                         direction = ' <-- '
 
                     color = None
                     if 'm' in traf_direction:
                         color = 'WARNING'
-                    print formatOutput(sender, receiver, direction, getFlags(pkt_scapy), color)
+                    if (logall is False and 'm' in traf_direction) or logall is True:
+                        print formatOutput(sender, receiver, direction, getFlags(pkt_scapy), color)
 
         except KeyboardInterrupt:
             return -1
@@ -121,7 +129,9 @@ def consoleOutput():
                 if cmd in ['help', '?']:
                     print "rld: reload configuration file\n" + \
                           "exit: stop mitmbox and exit" + \
-                          "debug: pdb debugger"
+                          "debug: pdb debugger" + \
+                        "log: logging all traf" + \
+                        "logmitm: only log mitm0 traffic"
 
                 elif cmd in ['quit', 'exit', 'stop', 'leave']:
                     finished = True
@@ -133,7 +143,9 @@ def consoleOutput():
                 elif cmd in ['debug', 'dbg']:
                     pdb.set_trace()
                 elif cmd in ['log']:
-                    printLogs()
+                    printLogs(True)
+                elif cmd in ['logmitm']:
+                    printLogs(False)
 
         except KeyboardInterrupt:
             # Ctrl+C detected, so let's finish the poison thread and exit
