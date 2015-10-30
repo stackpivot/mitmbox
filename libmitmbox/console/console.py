@@ -70,7 +70,7 @@ def printLogs():
 
                     sender = ip_src + ':' + tcp_sport
                     receiver = ip_dst + ':' + tcp_dport
-
+                    print traf_direction
                     if ip_src == CONFIG.client_ip and traf_direction is 'c_to_s':
                             direction = ' --> '
                     elif ip_dst == CONFIG.client_ip and traf_direction is 's_to_c':

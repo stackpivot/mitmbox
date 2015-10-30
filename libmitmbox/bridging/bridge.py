@@ -93,13 +93,18 @@ class MITMBridge():
             # adjust packet if it is going to client
             if pkt_scapy[IP].dst == CONFIG.client_ip:
                 if LOGGING is True:
-                    LOG_QUEUE.put(['m_to_c', p])
+                    if pkt_scapy.getlayer("IP"):
+                        if pkt_scapy.getlayer("TCP"):
+                            LOG_QUEUE.put(['m_to_c', str(pkt_scapy)])
+                            # THIS SHIT IS BUGGGYYYYYY!!!
                 return str(Ether(dst=CONFIG.client_mac, src=CONFIG.server_mac) / pkt_scapy)
             # adjust packet to any other destination
             else:
                 pkt_scapy[IP].src = CONFIG.client_ip
                 if LOGGING is True:
-                    LOG_QUEUE.put(['m_to_s', p])
+                    if pkt_scapy.getlayer("IP"):
+                        if pkt_scapy.getlayer("TCP"):
+                            LOG_QUEUE.put(['m_to_s', str(pkt_scapy)])
                 return str(Ether(dst=CONFIG.server_mac, src=CONFIG.client_mac) / pkt_scapy)
 
 
