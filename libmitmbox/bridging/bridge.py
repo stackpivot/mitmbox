@@ -64,7 +64,7 @@ class MITMBridge():
             if ip_port_tuple[0] == pkt_ip or ip_port_tuple[0] == "\x00\x00\x00\x00":
                 if ip_port_tuple[1] == pkt_port:
                     return True
-                elif ip_port_tuple[1] == 0
+                elif ip_port_tuple[1] == 0:
                     return True
         return False
 
